@@ -13,7 +13,7 @@ function nuvoSerial(log, config) {
     this.log = log;
     this.name = config.name;
     this.zone = config.zone;
-    this.defaultSource = config.defaultSource;
+    this.source = config.source;
     this.volume = {};
     this.mute = {};
 }
@@ -58,7 +58,13 @@ nuvoSerial.prototype = {
       this.log("get power");
       if (serial.zoneStatus[this.zone][1] == "ON")
       {
-         callback(null, true);
+         if (serial.zoneStatus[this.zone][2].substring(3) == this.source)
+         {
+            callback(null, true);
+         } else {
+            callback(null, false);
+         }
+
       } else {
          callback(null, false);
       }
@@ -71,7 +77,7 @@ nuvoSerial.prototype = {
       if(power)
       {
          serial.zoneOn(this.zone);
-         serial.zoneSource(this.zone, this.defaultSource);
+         serial.zoneSource(this.zone, this.source);
       } else {
          serial.zoneOff(this.zone);
       }
