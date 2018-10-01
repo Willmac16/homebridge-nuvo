@@ -1,11 +1,11 @@
 {
   "name": "homebridge-nuvo",
-  "version": "1.0.0",
+  "version": "0.1.1",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "Will MacCormack",
   "license": "ISC",
   "keywords": [
     "homebridge-plugin"
@@ -15,8 +15,19 @@
     "homebridge": ">=0.2.0"
   },
   "dependencies": {
-    "request": "^2.88.0"
+    "@serialport/parser-readline": "^2.0.1",
+    "homebridge": "^0.4.45",
+    "request": "^2.88.0",
+    "serialport": "^7.0.2"
   },
   "devDependencies": {},
-  "description": ""
+  "description": "This is a homebridge plugin for that allows serial control of nuvo whole home audio systems.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Willmac16/homebridge-nuvo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Willmac16/homebridge-nuvo/issues"
+  },
+  "homepage": "https://github.com/Willmac16/homebridge-nuvo#readme"
 }
