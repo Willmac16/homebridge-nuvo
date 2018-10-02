@@ -1,13 +1,15 @@
+
+const accessory = require('./accessory')
 const SerialPort = require('serialport')
 const Readline = require('@serialport/parser-readline')
-const port = new SerialPort('/dev/tty.usbserial', {
+const port = new SerialPort(accessory.port, {
    baudRate: 57600
 });
 const parser = port.pipe(new Readline({ delimiter: '\r\n' }))
 
 var line = null;
 zoneStatus = [];
-var numberOfZones = 8;
+var numberOfZones = accessory.numZones;
 for(i=0; i <= numberOfZones; i++)
    zoneStatus.push(i);
 
