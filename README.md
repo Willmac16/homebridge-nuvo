@@ -15,3 +15,6 @@ Sample Config:
     }
     ]
 ```
+Options: 
+The port option is for you to set the path to the nuvo.
+The numZones option if for you to set the number of zones that your amplifier supports for zone detection purposes.
