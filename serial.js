@@ -217,4 +217,6 @@ setTimeout(sort, 1500);
 setTimeout(allSourceConfig, 2000);
 setTimeout(allZoneConfig, 3000);
 setTimeout(allZoneStatus, 4000);
+setTimeout(allSourceConfig, 5000);
+setTimeout(allZoneConfig, 6000);
 statusCheck(300);

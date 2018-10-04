@@ -60,5 +60,5 @@ module.exports.nuvoPlatform.prototype.accessories = function (callback)
       }
     }
 return callback(accessoryList)
-}, 5000)
+}, 10000)
 }
