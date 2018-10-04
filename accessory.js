@@ -1,4 +1,7 @@
-let serial = setTimeout(require, 1000, './serial');
+
+let serial = require('./serial');
+
+console.log(serial);
 
 module.exports.setHomebridge = function (homebridge)
 {
@@ -7,27 +10,19 @@ module.exports.setHomebridge = function (homebridge)
    this.homebridge = homebridge;
 }
 
-module.exports.nuvoSerial = function (log, config) {
-    this.log = log;
-    this.name = config.name;
-    this.zone = config.zone;
-    this.source = config.source;
+module.exports.nuvoSpeaker = function (platform, zone, source, i, j) {
+    this.platform = platform;
+    this.log = this.platform.log;
+    this.name = zone[2].substring(5, (zone[2].length-1)) + " " + source[2].substring(5, (source[2].length-1));
+    this.zone = i;
+    this.source = j;
     this.volume = {};
     this.mute = {};
-    if (config.port)
-    {
-      console.log(config.port);
-      module.exports.port = config.port;
-    }
-    if (config.numZones)
-    {
-      console.log(config.numZones);
-      module.exports.numZones = config.numZones;
-    }
+
 
 }
 
-module.exports.nuvoSerial.prototype = {
+module.exports.nuvoSpeaker.prototype = {
 
     identify: function (callback) {
         this.log("Identify requested!");

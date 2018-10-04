@@ -17,7 +17,6 @@
   "dependencies": {
     "@serialport/parser-readline": "^2.0.1",
     "homebridge": "^0.4.45",
-    "request": "^2.88.0",
     "serialport": "^7.0.2"
   },
   "devDependencies": {},

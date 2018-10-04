@@ -1,10 +1,8 @@
 
-const request = require("request");
-var accessory = require("./accessory");
-
-
+let platform = require("./platform");
 
 module.exports = function (homebridge) {
-   accessory.setHomebridge(homebridge);
-   homebridge.registerAccessory("homebridge-nuvo", "nuvo-serial", accessory.nuvoSerial);
+   platform.setHomebridge(homebridge);
+
+   homebridge.registerPlatform("homebridge-nuvo", "nuvo-platform", platform.nuvoPlatform);
 };
