@@ -13,94 +13,86 @@ sourceConfig = [];
 
 portWorking = true;
 
-function setup()
-{
-    port = new SerialPort(platform.port, {
-       baudRate: 57600
-    }, false); // this is the openImmediately flag [default is true]
 
-    port.on('error', function(err) {
-      portWorking = false;
-      console.log("Homebridge-Nuvo: That port does not seem to exist. Consider changing it in the config.json file for homebridge."); // THIS SHOULD WORK!
-    });
-
-    if (portWorking)
-    {
-        parser = port.pipe(new Readline({ delimiter: '\r\n' }))
-
-        numberOfZones = platform.numZones;
-
-
-
-
-        for(i=0; i <= numberOfZones; i++)
-           zoneStatus.push(i);
-        for(i=0; i <= numberOfZones; i++)
-           zoneConfig.push(i);
-        for(i=0; i <= 6; i++)
-           sourceConfig.push(i);
-    }
-}
 
 
 module.exports = {
-    setPlatform: function(platform)
+    setup: function(portPath, numZones)
     {
-        this.platform = platform;
-        setup();
-        startTimers();
+        port = new SerialPort(portPath, {
+           baudRate: 57600
+        }, false); // this is the openImmediately flag [default is true]
+
+        port.on('error', function(err) {
+          portWorking = false;
+          console.log("Homebridge-Nuvo: That port does not seem to exist. Consider changing it in the config.json file for homebridge."); // THIS SHOULD WORK!
+        });
+
+        if (portWorking)
+        {
+            console.log("Port is working so here we go");
+
+            parser = port.pipe(new Readline({ delimiter: '\r\n' }))
+
+
+            numberOfZones = numZones
+
+
+            for(i=0; i <= numberOfZones; i++)
+               zoneStatus.push(i);
+            for(i=0; i <= numberOfZones; i++)
+               zoneConfig.push(i);
+            for(i=0; i <= 6; i++)
+               sourceConfig.push(i);
+
+            startTimers();
+        }
     },
 
     //Zone functions
     zoneOn: function (zone)
     {
-       if(portWorking)
         port.write(`*Z${zone}ON\r`);
-       // console.log(`*Z${zone}ON\r`);
+        console.log(`*Z${zone}ON\r`);
     },
 
     zoneOff: function (zone)
     {
-        if(portWorking)
-            port.write(`*Z${zone}OFF\r`);
-       // console.log(`*Z${zone}OFF\r`);
+
+        port.write(`*Z${zone}OFF\r`);
+        console.log(`*Z${zone}OFF\r`);
     },
 
     zoneSource: function (zone, source)
     {
-        if(portWorking)
-            port.write(`*Z${zone}SRC${source}\r`);
-       // console.log(`*Z${zone}SRC${source}\r`);
+        port.write(`*Z${zone}SRC${source}\r`);
+        console.log(`*Z${zone}SRC${source}\r`);
     },
 
     zoneVolume: function (zone, volume)
     {
-        if(portWorking)
-            port.write(`*Z${zone}VOL${volume}\r`);
-       // console.log(`*Z${zone}VOL${volume}\r`);
+        port.write(`*Z${zone}VOL${volume}\r`);
+        console.log(`*Z${zone}VOL${volume}\r`);
     },
 
     zoneMuteOn: function (zone)
     {
-        if(portWorking)
-            port.write(`*Z${zone}MUTEON\r`);
-       // console.log(`*Z${zone}MUTEON\r`);
+        port.write(`*Z${zone}MUTEON\r`);
+        console.log(`*Z${zone}MUTEON\r`);
 
     },
 
     zoneMuteOff: function (zone)
     {
-        if(portWorking)
-            port.write(`*Z${zone}MUTEOFF\r`);
-       // console.log(`*Z${zone}MUTEOFF\r`);
+        port.write(`*Z${zone}MUTEOFF\r`);
+        console.log(`*Z${zone}MUTEOFF\r`);
 
     },
 
     allOff: function ()
     {
-        if(portWorking)
-            port.write(`*ALLOFF\r`);
-       // console.log(`*ALLOFF\r`);
+        port.write(`*ALLOFF\r`);
+        console.log(`*ALLOFF\r`);
     },
 
 };
@@ -112,25 +104,22 @@ module.exports = {
 
 function sourceConfigName(source, name)
 {
-    if(portWorking)
-        port.write(`*SCFG${source}NAME\"${name}\"\r`);
-   // console.log(`*SCFG${source}NAME\"${name}\"\r`);
+    port.write(`*SCFG${source}NAME\"${name}\"\r`);
+    console.log(`*SCFG${source}NAME\"${name}\"\r`);
 }
 
 function sourceConfigNuvonet(source, nuvonet)
 {
-    if(portWorking)
-        port.write(`*SCFG${source}NUVONET${nuvonet}\r`);
-   // console.log(`*SCFG${source}NUVONET${nuvonet}\r`);
+    port.write(`*SCFG${source}NUVONET${nuvonet}\r`);
+    console.log(`*SCFG${source}NUVONET${nuvonet}\r`);
 }
 
 
 //Status functions
 function zoneAskStatus(zone)
 {
-   if(portWorking)
-        port.write(`*Z${zone}STATUS?\r`);
-   // console.log(`*Z${zone}STATUS?\r`);
+    port.write(`*Z${zone}STATUS?\r`);
+    console.log(`*Z${zone}STATUS?\r`);
 }
 
 function allZoneStatus()
@@ -144,9 +133,8 @@ function allZoneStatus()
 
 function zoneAskConfig(zone)
 {
-   if(portWorking)
-        port.write(`*ZCFG${zone}STATUS?\r`);
-   // console.log(`*ZCFG${zone}STATUS?\r`);
+    port.write(`*ZCFG${zone}STATUS?\r`);
+    console.log(`*ZCFG${zone}STATUS?\r`);
 }
 
 function allZoneConfig()
@@ -162,7 +150,7 @@ function sourceAskConfig(source)
 {
    if(portWorking)
         port.write(`*SCFG${source}STATUS?\r`);
-   // console.log(`*SCFG${source}STATUS?\r`);
+   console.log(`*SCFG${source}STATUS?\r`);
 }
 
 function allSourceConfig()
@@ -179,7 +167,7 @@ function statusCheck(seconds)
 {
    var the_interval = seconds * 1000;
    setInterval(function() {
-      // console.log("I am checking every " + seconds + " seconds.");
+      console.log("I am checking every " + seconds + " seconds.");
       allZoneStatus();
    }, the_interval);
 
@@ -191,7 +179,7 @@ function statusCheck(seconds)
 //    {
 //       parser.on('data', function(data)
 //       {
-//          // console.log(data);
+//          console.log(data);
 //       });
 //    });
 // }
@@ -247,11 +235,13 @@ function sort()
 // setTimeout(setup, 1000);
 function startTimers()
 {
+
+    console.log("Starting the timers");
     setTimeout(sort, 1500);
     setTimeout(allSourceConfig, 2000);
-    setTimeout(allZoneConfig, 3000);
-    setTimeout(allZoneStatus, 4000);
-    setTimeout(allSourceConfig, 5000);
-    setTimeout(allZoneConfig, 6000);
+    setTimeout(allZoneConfig, 3500);
+    setTimeout(allZoneStatus, 5000);
+    setTimeout(allSourceConfig, 6000);
+    setTimeout(allZoneConfig, 7000);
     statusCheck(300);
 }

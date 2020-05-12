@@ -1,13 +1,13 @@
-
-let serial = require('./serial');
+let serial = require("./serial");
 
 // console.log(serial);
 
-module.exports.setHomebridge = function (homebridge)
+module.exports.setHomebridge = function (homebridge, serial)
 {
    Service = homebridge.hap.Service;
    Characteristic = homebridge.hap.Characteristic;
    this.homebridge = homebridge;
+   this.serial = serial;
 }
 
 module.exports.nuvoSpeaker = function (platform, zone, source, i, j) {
