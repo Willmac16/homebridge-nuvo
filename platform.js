@@ -10,10 +10,13 @@ module.exports.setHomebridge = function (homebridge)
    Characteristic = homebridge.hap.Characteristic;
    this.homebridge = homebridge;
    accessory.setHomebridge(homebridge);
+   serial.setPlatform(this);
 }
 
 module.exports.nuvoPlatform = function (log, config) {
     this.log = log;
+    module.exports.log = log;
+
     this.nuvoAccessories = {}
 
     if (config.port)
@@ -38,7 +41,7 @@ module.exports.nuvoPlatform.prototype.accessories = function (callback)
 
    let accessoryList = []
    setTimeout(() => {
-    this.log("Starting Scan for " + this.numZones + " zones.");
+    // this.log("Starting Scan for " + this.numZones + " zones.");
     for (i = 1; i <= this.numZones; i++)
     {
       if (serial.zoneConfig[i])

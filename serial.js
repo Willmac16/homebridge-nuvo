@@ -1,80 +1,107 @@
 
-let platform = require('./platform')
 let SerialPort = require('serialport')
 let Readline = require('@serialport/parser-readline')
 let port
 let parser
 var numberOfZones
+var platform
 
 zoneStatus = [];
 zoneConfig = [];
 sourceConfig = [];
 
-function setup () {
-port = new SerialPort(platform.port, {
-   baudRate: 57600
-});
-parser = port.pipe(new Readline({ delimiter: '\r\n' }))
 
-numberOfZones = platform.numZones;
+portWorking = true;
+
+function setup()
+{
+    port = new SerialPort(platform.port, {
+       baudRate: 57600
+    }, false); // this is the openImmediately flag [default is true]
+
+    port.on('error', function(err) {
+      portWorking = false;
+      console.log("Homebridge-Nuvo: That port does not seem to exist. Consider changing it in the config.json file for homebridge."); // THIS SHOULD WORK!
+    });
+
+    if (portWorking)
+    {
+        parser = port.pipe(new Readline({ delimiter: '\r\n' }))
+
+        numberOfZones = platform.numZones;
 
 
 
 
-for(i=0; i <= numberOfZones; i++)
-   zoneStatus.push(i);
-for(i=0; i <= numberOfZones; i++)
-   zoneConfig.push(i);
-for(i=0; i <= 6; i++)
-   sourceConfig.push(i);
+        for(i=0; i <= numberOfZones; i++)
+           zoneStatus.push(i);
+        for(i=0; i <= numberOfZones; i++)
+           zoneConfig.push(i);
+        for(i=0; i <= 6; i++)
+           sourceConfig.push(i);
+    }
 }
 
 
 module.exports = {
-//Zone functions
-zoneOn: function (zone)
-{
-   port.write(`*Z${zone}ON\r`);
-   console.log(`*Z${zone}ON\r`);
-},
+    setPlatform: function(platform)
+    {
+        this.platform = platform;
+        setup();
+        startTimers();
+    },
 
-zoneOff: function (zone)
-{
-   port.write(`*Z${zone}OFF\r`);
-   console.log(`*Z${zone}OFF\r`);
-},
+    //Zone functions
+    zoneOn: function (zone)
+    {
+       if(portWorking)
+        port.write(`*Z${zone}ON\r`);
+       // console.log(`*Z${zone}ON\r`);
+    },
 
-zoneSource: function (zone, source)
-{
-   port.write(`*Z${zone}SRC${source}\r`);
-   console.log(`*Z${zone}SRC${source}\r`);
-},
+    zoneOff: function (zone)
+    {
+        if(portWorking)
+            port.write(`*Z${zone}OFF\r`);
+       // console.log(`*Z${zone}OFF\r`);
+    },
 
-zoneVolume: function (zone, volume)
-{
-   port.write(`*Z${zone}VOL${volume}\r`);
-   console.log(`*Z${zone}VOL${volume}\r`);
-},
+    zoneSource: function (zone, source)
+    {
+        if(portWorking)
+            port.write(`*Z${zone}SRC${source}\r`);
+       // console.log(`*Z${zone}SRC${source}\r`);
+    },
 
-zoneMuteOn: function (zone)
-{
-   port.write(`*Z${zone}MUTEON\r`);
-   console.log(`*Z${zone}MUTEON\r`);
+    zoneVolume: function (zone, volume)
+    {
+        if(portWorking)
+            port.write(`*Z${zone}VOL${volume}\r`);
+       // console.log(`*Z${zone}VOL${volume}\r`);
+    },
 
-},
+    zoneMuteOn: function (zone)
+    {
+        if(portWorking)
+            port.write(`*Z${zone}MUTEON\r`);
+       // console.log(`*Z${zone}MUTEON\r`);
 
-zoneMuteOff: function (zone)
-{
-   port.write(`*Z${zone}MUTEOFF\r`);
-   console.log(`*Z${zone}MUTEOFF\r`);
+    },
 
-},
+    zoneMuteOff: function (zone)
+    {
+        if(portWorking)
+            port.write(`*Z${zone}MUTEOFF\r`);
+       // console.log(`*Z${zone}MUTEOFF\r`);
 
-allOff: function ()
-{
-   port.write(`*ALLOFF\r`);
-   console.log(`*ALLOFF\r`);
-},
+    },
+
+    allOff: function ()
+    {
+        if(portWorking)
+            port.write(`*ALLOFF\r`);
+       // console.log(`*ALLOFF\r`);
+    },
 
 };
 
@@ -85,22 +112,25 @@ allOff: function ()
 
 function sourceConfigName(source, name)
 {
-   port.write(`*SCFG${source}NAME\"${name}\"\r`);
-   console.log(`*SCFG${source}NAME\"${name}\"\r`);
+    if(portWorking)
+        port.write(`*SCFG${source}NAME\"${name}\"\r`);
+   // console.log(`*SCFG${source}NAME\"${name}\"\r`);
 }
 
 function sourceConfigNuvonet(source, nuvonet)
 {
-   port.write(`*SCFG${source}NUVONET${nuvonet}\r`);
-   console.log(`*SCFG${source}NUVONET${nuvonet}\r`);
+    if(portWorking)
+        port.write(`*SCFG${source}NUVONET${nuvonet}\r`);
+   // console.log(`*SCFG${source}NUVONET${nuvonet}\r`);
 }
 
 
 //Status functions
 function zoneAskStatus(zone)
 {
-   port.write(`*Z${zone}STATUS?\r`);
-   console.log(`*Z${zone}STATUS?\r`);
+   if(portWorking)
+        port.write(`*Z${zone}STATUS?\r`);
+   // console.log(`*Z${zone}STATUS?\r`);
 }
 
 function allZoneStatus()
@@ -109,13 +139,14 @@ function allZoneStatus()
       var delay = ((i)*50);
       setTimeout(zoneAskStatus, delay, i);
    }
-   setTimeout (console.log, 1000, zoneStatus);
+   // setTimeout (console.log, 1000, zoneStatus);
 }
 
 function zoneAskConfig(zone)
 {
-   port.write(`*ZCFG${zone}STATUS?\r`);
-   console.log(`*ZCFG${zone}STATUS?\r`);
+   if(portWorking)
+        port.write(`*ZCFG${zone}STATUS?\r`);
+   // console.log(`*ZCFG${zone}STATUS?\r`);
 }
 
 function allZoneConfig()
@@ -124,13 +155,14 @@ function allZoneConfig()
       var delay = ((i)*50);
       setTimeout(zoneAskConfig, delay, i);
    }
-   setTimeout (console.log, 1000, zoneConfig);
+   // setTimeout (console.log, 1000, zoneConfig);
 }
 
 function sourceAskConfig(source)
 {
-   port.write(`*SCFG${source}STATUS?\r`);
-   console.log(`*SCFG${source}STATUS?\r`);
+   if(portWorking)
+        port.write(`*SCFG${source}STATUS?\r`);
+   // console.log(`*SCFG${source}STATUS?\r`);
 }
 
 function allSourceConfig()
@@ -139,7 +171,7 @@ function allSourceConfig()
       var delay = ((i)*50);
       setTimeout(sourceAskConfig, delay, i);
    }
-   setTimeout (console.log, 1000, sourceConfig);
+   // setTimeout (console.log, 1000, sourceConfig);
 }
 
 
@@ -147,24 +179,24 @@ function statusCheck(seconds)
 {
    var the_interval = seconds * 1000;
    setInterval(function() {
-      console.log("I am checking every " + seconds + " seconds.");
+      // console.log("I am checking every " + seconds + " seconds.");
       allZoneStatus();
    }, the_interval);
 
 }
 
-function read ()
-{
-   port.open(function ()
-   {
-      parser.on('data', function(data)
-      {
-         console.log(data);
-      });
-   });
-}
+// function read()
+// {
+//    port.open(function ()
+//    {
+//       parser.on('data', function(data)
+//       {
+//          // console.log(data);
+//       });
+//    });
+// }
 
-function listen (callback)
+function listen(callback)
 {
    port.open(function ()
    {
@@ -212,11 +244,14 @@ function sort()
 
 
 
-setTimeout(setup, 1000);
-setTimeout(sort, 1500);
-setTimeout(allSourceConfig, 2000);
-setTimeout(allZoneConfig, 3000);
-setTimeout(allZoneStatus, 4000);
-setTimeout(allSourceConfig, 5000);
-setTimeout(allZoneConfig, 6000);
-statusCheck(300);
+// setTimeout(setup, 1000);
+function startTimers()
+{
+    setTimeout(sort, 1500);
+    setTimeout(allSourceConfig, 2000);
+    setTimeout(allZoneConfig, 3000);
+    setTimeout(allZoneStatus, 4000);
+    setTimeout(allSourceConfig, 5000);
+    setTimeout(allZoneConfig, 6000);
+    statusCheck(300);
+}

@@ -1,7 +1,7 @@
 
 let serial = require('./serial');
 
-console.log(serial);
+// console.log(serial);
 
 module.exports.setHomebridge = function (homebridge)
 {
@@ -25,7 +25,7 @@ module.exports.nuvoSpeaker = function (platform, zone, source, i, j) {
 module.exports.nuvoSpeaker.prototype = {
 
     identify: function (callback) {
-        this.log("Identify requested!");
+        // this.log("Identify requested!");
         callback();
     },
 
@@ -59,7 +59,7 @@ module.exports.nuvoSpeaker.prototype = {
     },
     getPowerState: function (callback)
     {
-      this.log("get power");
+      // this.log("get power");
       if (serial.zoneStatus[this.zone][1] == "ON")
       {
          if (serial.zoneStatus[this.zone][2].substring(3) == this.source)
@@ -77,7 +77,7 @@ module.exports.nuvoSpeaker.prototype = {
 
     setPowerState: function (power, callback)
     {
-      this.log("set power " + power);
+      // this.log("set power " + power);
       if(power)
       {
          serial.zoneOn(this.zone);
@@ -90,7 +90,7 @@ module.exports.nuvoSpeaker.prototype = {
 
     getVolume: function (callback)
     {
-      this.log("get vol" );
+      // this.log("get vol" );
 
       if (serial.zoneStatus[this.zone][3])
       {
@@ -114,7 +114,7 @@ module.exports.nuvoSpeaker.prototype = {
 
     setVolume: function (volume, callback)
     {
-      this.log("set vol "+ volume);
+      // this.log("set vol "+ volume);
 
       if (serial.zoneStatus[this.zone][1] == "OFF")
       {
