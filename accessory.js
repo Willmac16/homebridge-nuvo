@@ -1,4 +1,4 @@
-let serial = require("./serial");
+let serial = require('./serial');
 
 // console.log(serial);
 
@@ -53,7 +53,7 @@ module.exports.nuvoSpeaker.prototype = {
            .setCharacteristic(Characteristic.Manufacturer, "Will MacCormack")
            .setCharacteristic(Characteristic.Model, "Nuvo Speaker")
            .setCharacteristic(Characteristic.SerialNumber, "NVGC")
-           .setCharacteristic(Characteristic.FirmwareRevision, "0.1.1");
+           .setCharacteristic(Characteristic.FirmwareRevision, "0.1.2");
 
         return [informationService, lightService];
     },

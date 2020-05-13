@@ -23,10 +23,11 @@ module.exports.nuvoPlatform = function (log, config) {
 
     if (config.port)
     {
-      module.exports.port = config.port;
-   } else {
-      module.exports.port = '/dev/tty.usbserial';
-   }
+        module.exports.port = config.port;
+    } else {
+        this.log("Currently using a default port path. You should consider figuring out what your port is so this will actually work.");
+        module.exports.port = '/dev/tty.usbserial';
+    }
 
     if (config.numZones)
     {
@@ -45,28 +46,35 @@ module.exports.nuvoPlatform.prototype.accessories = function (callback)
 
    let accessoryList = []
    setTimeout(() => {
-    this.log("Starting Scan for " + this.numZones + " zones.");
+    // this.log("Starting Scan for " + this.numZones + " zones.");
     for (i = 1; i <= this.numZones; i++)
     {
-        console.log(serial);
-      if (serial.zoneConfig[i])
-      {
-          if (serial.zoneConfig[i][1] == "ENABLE1")
-          {
-             for (j = 1; j <= 6; j++)
-             {
-                if (serial.sourceConfig[j])
+        if (serial.zoneConfig)
+        {
+            if (serial.zoneConfig[i])
+            {
+                if (serial.zoneConfig[i][1] == "ENABLE1")
                 {
-                if (serial.sourceConfig[j][1] == "ENABLE1")
-                {
-                   const speaker = new nuvoSpeaker(this, serial.zoneConfig[i], serial.sourceConfig[j], i, j)
-                   accessoryList.push(speaker)
+                    for (j = 1; j <= 6; j++)
+                    {
+                        if (serial.sourceConfig[j])
+                        {
+                            if (serial.sourceConfig[j][1] == "ENABLE1")
+                            {
+                                const speaker = new nuvoSpeaker(this, serial.zoneConfig[i], serial.sourceConfig[j], i, j)
+                                accessoryList.push(speaker)
+                            }
+                        }
+                    }
                 }
-                }
-             }
-          }
-      }
+            }
+        }
     }
 return callback(accessoryList)
-}, 20000)
+}, 15000)
+}
+
+module.exports.log = function (text)
+{
+    this.log(text);
 }

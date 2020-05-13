@@ -1,19 +1,14 @@
 
+let platform = require('./platform');
 let SerialPort = require('serialport')
 let Readline = require('@serialport/parser-readline')
 let port
 let parser
 var numberOfZones
-var platform
 
 zoneStatus = [];
 zoneConfig = [];
 sourceConfig = [];
-
-
-portWorking = true;
-
-
 
 
 module.exports = {
@@ -24,19 +19,13 @@ module.exports = {
         }, false); // this is the openImmediately flag [default is true]
 
         port.on('error', function(err) {
-          portWorking = false;
-          console.log("Homebridge-Nuvo: That port does not seem to exist. Consider changing it in the config.json file for homebridge."); // THIS SHOULD WORK!
+            platform.log("That port does not seem to exist (or this process doesn't have access to it). Consider changing it in the config.json file for homebridge.");
         });
 
-        if (portWorking)
-        {
-            console.log("Port is working so here we go");
-
+        port.on('open', function(err) {
             parser = port.pipe(new Readline({ delimiter: '\r\n' }))
 
-
             numberOfZones = numZones
-
 
             for(i=0; i <= numberOfZones; i++)
                zoneStatus.push(i);
@@ -46,7 +35,9 @@ module.exports = {
                sourceConfig.push(i);
 
             startTimers();
-        }
+
+            platform.log("Port setup process seems to have worked. Yay!");
+        });
     },
 
     //Zone functions
@@ -148,9 +139,8 @@ function allZoneConfig()
 
 function sourceAskConfig(source)
 {
-   if(portWorking)
-        port.write(`*SCFG${source}STATUS?\r`);
-   console.log(`*SCFG${source}STATUS?\r`);
+    port.write(`*SCFG${source}STATUS?\r`);
+    console.log(`*SCFG${source}STATUS?\r`);
 }
 
 function allSourceConfig()
@@ -236,7 +226,7 @@ function sort()
 function startTimers()
 {
 
-    console.log("Starting the timers");
+    console.log("Starting the timers ");
     setTimeout(sort, 1500);
     setTimeout(allSourceConfig, 2000);
     setTimeout(allZoneConfig, 3500);
