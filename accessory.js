@@ -1,7 +1,5 @@
 let serial = require('./serial');
 
-// console.log(serial);
-
 module.exports.setHomebridge = function (homebridge, serial)
 {
    Service = homebridge.hap.Service;

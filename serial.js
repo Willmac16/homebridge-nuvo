@@ -44,46 +44,46 @@ module.exports = {
     zoneOn: function (zone)
     {
         port.write(`*Z${zone}ON\r`);
-        console.log(`*Z${zone}ON\r`);
+        // console.log(`*Z${zone}ON\r`);
     },
 
     zoneOff: function (zone)
     {
 
         port.write(`*Z${zone}OFF\r`);
-        console.log(`*Z${zone}OFF\r`);
+        // console.log(`*Z${zone}OFF\r`);
     },
 
     zoneSource: function (zone, source)
     {
         port.write(`*Z${zone}SRC${source}\r`);
-        console.log(`*Z${zone}SRC${source}\r`);
+        // console.log(`*Z${zone}SRC${source}\r`);
     },
 
     zoneVolume: function (zone, volume)
     {
         port.write(`*Z${zone}VOL${volume}\r`);
-        console.log(`*Z${zone}VOL${volume}\r`);
+        // console.log(`*Z${zone}VOL${volume}\r`);
     },
 
     zoneMuteOn: function (zone)
     {
         port.write(`*Z${zone}MUTEON\r`);
-        console.log(`*Z${zone}MUTEON\r`);
+        // console.log(`*Z${zone}MUTEON\r`);
 
     },
 
     zoneMuteOff: function (zone)
     {
         port.write(`*Z${zone}MUTEOFF\r`);
-        console.log(`*Z${zone}MUTEOFF\r`);
+        // console.log(`*Z${zone}MUTEOFF\r`);
 
     },
 
     allOff: function ()
     {
         port.write(`*ALLOFF\r`);
-        console.log(`*ALLOFF\r`);
+        // console.log(`*ALLOFF\r`);
     },
 
 };
@@ -96,13 +96,13 @@ module.exports = {
 function sourceConfigName(source, name)
 {
     port.write(`*SCFG${source}NAME\"${name}\"\r`);
-    console.log(`*SCFG${source}NAME\"${name}\"\r`);
+    // console.log(`*SCFG${source}NAME\"${name}\"\r`);
 }
 
 function sourceConfigNuvonet(source, nuvonet)
 {
     port.write(`*SCFG${source}NUVONET${nuvonet}\r`);
-    console.log(`*SCFG${source}NUVONET${nuvonet}\r`);
+    // console.log(`*SCFG${source}NUVONET${nuvonet}\r`);
 }
 
 
@@ -110,7 +110,7 @@ function sourceConfigNuvonet(source, nuvonet)
 function zoneAskStatus(zone)
 {
     port.write(`*Z${zone}STATUS?\r`);
-    console.log(`*Z${zone}STATUS?\r`);
+    // console.log(`*Z${zone}STATUS?\r`);
 }
 
 function allZoneStatus()
@@ -125,7 +125,7 @@ function allZoneStatus()
 function zoneAskConfig(zone)
 {
     port.write(`*ZCFG${zone}STATUS?\r`);
-    console.log(`*ZCFG${zone}STATUS?\r`);
+    // console.log(`*ZCFG${zone}STATUS?\r`);
 }
 
 function allZoneConfig()
@@ -140,7 +140,7 @@ function allZoneConfig()
 function sourceAskConfig(source)
 {
     port.write(`*SCFG${source}STATUS?\r`);
-    console.log(`*SCFG${source}STATUS?\r`);
+    // console.log(`*SCFG${source}STATUS?\r`);
 }
 
 function allSourceConfig()
@@ -157,7 +157,7 @@ function statusCheck(seconds)
 {
    var the_interval = seconds * 1000;
    setInterval(function() {
-      console.log("I am checking every " + seconds + " seconds.");
+      // console.log("I am checking every " + seconds + " seconds.");
       allZoneStatus();
    }, the_interval);
 
@@ -226,7 +226,7 @@ function sort()
 function startTimers()
 {
 
-    console.log("Starting the timers ");
+    // console.log("Starting the timers ");
     setTimeout(sort, 1500);
     setTimeout(allSourceConfig, 2000);
     setTimeout(allZoneConfig, 3500);
