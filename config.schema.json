@@ -1,0 +1,34 @@
+{
+  "pluginAlias": "nuvo-platform",
+  "pluginType": "platform",
+  "singular": true,
+  "footerDisplay": "For More Help go to the [github page](https://github.com/Willmac16/homebridge-nuvo/blob/master/README.md).",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "port": {
+        "title": "Path To Nuvo Device",
+        "type": "string",
+        "default": "/dev/tty.usbserial",
+        "required": true
+      },
+      "numZones": {
+        "title": "Number of Zones",
+        "type": "number",
+        "default": 8,
+        "minimum": 0,
+        "maximum": 16,
+        "required": true
+      },
+      "portRetryInterval": {
+        "title": "Port Retry Interval",
+        "type": "number",
+        "default": 0,
+        "required": false,
+        "minimum": 0,
+        "description": "Frequency in seconds to attempt to connect to serialport if it fails. 0 disables retry."
+      }
+
+    }
+  }
+}
