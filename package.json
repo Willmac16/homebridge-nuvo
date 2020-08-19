@@ -1,6 +1,6 @@
 {
   "name": "homebridge-nuvo",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "main": "dist/platform.js",
   "scripts": {
     "clean": "rimraf ./dist",
@@ -15,7 +15,8 @@
     "homebridge-plugin"
   ],
   "files": [
-      "dist"
+      "dist",
+      "config.schema.json"
   ],
   "engines": {
     "node": ">=0.10.0",
