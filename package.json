@@ -15,16 +15,16 @@
     "homebridge-plugin"
   ],
   "files": [
-      "dist",
-      "config.schema.json"
+    "dist",
+    "config.schema.json"
   ],
   "engines": {
     "node": ">=0.10.0",
     "homebridge": ">=1.0.4"
   },
   "dependencies": {
-    "@serialport/parser-readline": "^2.0.2",
-    "serialport": "^7.1.5"
+    "@serialport/parser-readline": ">=2.0.2",
+    "serialport": ">=7.1.5"
   },
   "devDependencies": {
     "@types/node": "10.17.19",
