@@ -23,7 +23,7 @@
       "portRetryInterval": {
         "title": "Port Retry Interval",
         "type": "number",
-        "default": 0,
+        "placeholder": 0,
         "required": false,
         "minimum": 0,
         "description": "Frequency in seconds to attempt to connect to serialport if it fails. 0 disables retry."
