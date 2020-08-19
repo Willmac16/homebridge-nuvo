@@ -1,3 +1,4 @@
+[![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 # homebridge-nuvo
 This is a homebridge plugin for that allows serial control of nuvo whole home audio systems.
 It is set up as a platform so it will do discovery of zones and sources for you
