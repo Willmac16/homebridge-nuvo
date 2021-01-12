@@ -1,17 +1,13 @@
 let SerialPort = require('serialport')
 let Readline = require('@serialport/parser-readline')
 
-import {
-  Logging
-} from "homebridge";
-
 export const MAX_SOURCES: number = 6;
 
 export class NuvoSerial
 {
     portPath: string;
     numZones: number;
-    log: Logging;
+    log: Console;
 
     port: typeof SerialPort;
     parser: any;
@@ -20,7 +16,7 @@ export class NuvoSerial
 
     platform: any;
 
-    constructor(log: Logging, portPath: string, numZones: number, portRetryInterval: number, platform: any)
+    constructor(log: Console, portPath: string, numZones: number, portRetryInterval: number, platform: any)
     {
         this.log = log;
         this.portPath = portPath;
@@ -58,8 +54,13 @@ export class NuvoSerial
             {
                 this.log.info("Port setup process seems to have worked. Yay!");
                 this.parser = this.port.pipe(new Readline({ delimiter: '\r\n' }))
-
-                this.startTimers();
+                if (!this.platform.cli)
+                    this.startTimers();
+                else
+                {
+                    setTimeout(this.sort.bind(this), 500);
+                    setTimeout(this.platform.onPortOpen, 600);
+                }
             }
         });
     }
@@ -109,7 +110,7 @@ export class NuvoSerial
         this.log.debug(`*ALLOFF\r`);
     }
 
-    //config functions
+    // Source config functions
 
     sourceConfigName(source: number, name: string)
     {
@@ -117,12 +118,44 @@ export class NuvoSerial
         this.log.debug(`*SCFG${source}NAME\"${name}\"\r`);
     }
 
+    sourceConfigShortName(source: number, name: string)
+    {
+        this.port.write(`*SCFG${source}SHORTNAME\"${name}\"\r`);
+        this.log.debug(`*SCFG${source}SHORTNAME\"${name}\"\r`);
+    }
+
+    sourceConfigEnable(source: number, enable: any)
+    {
+        this.port.write(`*SCFG${source}ENABLE${enable}\r`);
+        this.log.debug(`*SCFG${source}ENABLE${enable}\r`);
+    }
+
+    sourceConfigGain(source: number, gain: number)
+    {
+        this.port.write(`*SCFG${source}GAIN\"${gain}\"\r`);
+        this.log.debug(`*SCFG${source}GAIN\"${gain}\"\r`);
+    }
+
+
     sourceConfigNuvonet(source: number, nuvonet: any)
     {
         this.port.write(`*SCFG${source}NUVONET${nuvonet}\r`);
         this.log.debug(`*SCFG${source}NUVONET${nuvonet}\r`);
     }
 
+    // Zone Config functions
+
+    zoneConfigEnable(zone: number, enable: any)
+    {
+        this.port.write(`*ZCFG${zone}ENABLE${enable}\r`);
+        this.log.debug(`*ZCFG${zone}ENABLE${enable}\r`);
+    }
+
+    zoneConfigName(zone: number, name: string)
+    {
+        this.port.write(`*ZCFG${zone}NAME\"${name}\"\r`);
+        this.log.debug(`*ZCFG${zone}NAME\"${name}\"\r`);
+    }
 
     //Status functions
     zoneAskStatus(zone: number)
@@ -171,7 +204,7 @@ export class NuvoSerial
     statusCheck(seconds: number)
     {
        var interval = seconds * 1000;
-       setInterval((log: Logging, allZoneStatus: Function) => {
+       setInterval((log: Console, allZoneStatus: Function) => {
           log.debug("I am checking every " + seconds + " seconds.");
           allZoneStatus();
       }, interval, this.log, this.allZoneStatus.bind(this));
@@ -194,29 +227,65 @@ export class NuvoSerial
 
     sort()
     {
-       this.listen((data) =>
-       {
-          var parts = data.split(",")
-          for (var zone=1; zone <= this.numZones; zone++)
-          {
-             if ("#Z"+zone === parts[0])
-             {
-                 this.platform.updateZone(zone, parts);
-             }
-             else if ("#ZCFG"+zone === parts[0])
-             {
-                this.platform.addZone(zone, parts);
-             }
-          }
-          for (var source=1; source <= MAX_SOURCES; source++)
-          {
-             if ("#SCFG"+source === parts[0])
-             {
-                 this.platform.addSource(source, parts);
-             }
-          }
+        this.listen((data) =>
+        {
+            var parts = data.split(",")
+            if (!this.platform.cli) {
+                if ("#Z" === parts[0].substring(0,2))
+                {
+                    if ("#ZCFG" === parts[0].substring(0,5))
+                    {
+                        let zone = parseInt(parts[0].substring(5))
+                        this.platform.addZone(zone, parts);
+                    }
+                    else
+                    {
+                        let zone = parseInt(parts[0].substring(2))
+                        this.platform.updateZone(zone, parts);
+                    }
+                }
+                else if ("#SCFG" === parts[0].substring(0,5))
+                {
+                    let source = parseInt(parts[0].substring(5))
+                    this.platform.addSource(source, parts);
+                }
+            } else {
+                let formatted = {};
+                if ("#ZCFG" === parts[0].substring(0,5)) {
+                    if (parts[1].substring(6) === "1")
+                    {
+                        formatted['enabled'] = true;
+                        formatted['name'] = parts[2].substring(5, parts[2].length-1);
+                        formatted['linkedTo'] = parts[3].substring(7);
+                        formatted['group'] = parts[4].substring(5);
+                        formatted['sourcesEnabled'] = parseInt(parts[5].substring(7));
+                    }
+                    else
+                    {
+                        formatted['enabled'] = false;
+                    }
+                } else if ("#SCFG" === parts[0].substring(0,5)) {
+                    formatted['Source'] = parts[0].substring(5);
 
-       });
+                    if (parts[1].substring(6) === "1")
+                    {
+                        formatted['enabled'] = true;
+                        formatted['name'] = parts[2].substring(5, parts[2].length-1);
+                        formatted['gain'] = parts[3].substring(4);
+                        formatted['nuvonet'] = parts[4].substring(7) === "1";
+                        formatted['shortname'] = parts[5].substring(10, 13);
+                    }
+                    else
+                    {
+                        formatted['enabled'] = false;
+                    }
+
+                }
+                this.log.log("\n");
+                this.log.log(formatted);
+                this.platform.prompt();
+            }
+        });
     }
 
     startTimers()
