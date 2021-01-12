@@ -167,7 +167,7 @@ class NuvoPlatform implements DynamicPlatformPlugin {
             + " " + this.sourceConfigs[sourceNum][2].substring(5, (this.sourceConfigs[sourceNum][2].length-1));
 
             this.log.debug(accessoryName);
-            const accessoryUUID =  hap.uuid.generate(accessoryName);
+            const accessoryUUID =  hap.uuid.generate(accessoryName+zoneNum+sourceNum);
             this.log.debug(accessoryUUID);
 
             const accessory = new Accessory(accessoryName, accessoryUUID);
