@@ -5,6 +5,47 @@ import {
 import readline from 'readline';
 
 const MAX_ZONES = 20;
+const MAX_SOURCES = 6;
+const MAX_GAIN = 14;
+const MAX_EIGHTTEEN = 18;
+
+import { addColors, createLogger, format, transports } from 'winston';
+
+const customLevels = {
+levels: {
+    error: 0,
+    warn: 1,
+    info: 2,
+    nuvo: 3,
+    verbose: 4,
+    debug: 5,
+    silly: 6
+},
+colors: {
+    error: 'red',
+    warn: 'orange',
+    info: 'green',
+    nuvo: 'blue',
+    verbose: 'yellow',
+    debug: 'grey',
+    silly: 'black'
+}
+
+};
+
+const logger = createLogger({
+    levels: customLevels.levels,
+    level: 'nuvo',
+    format: format.combine(
+      format.colorize(),
+      format.simple()
+    ),
+    transports: [
+        new transports.Console()
+    ]
+});
+
+addColors(customLevels.colors);
 
 var serialConnection: NuvoSerial;
 var serial = require("./serial");
@@ -12,43 +53,41 @@ var serial = require("./serial");
 var port = '/dev/tty.usbserial';
 var numZones = 8;
 
-var options = ['{-p|--port} <path_to_serial_port>', '{-h|--help}'];
-
 var rl: readline.Interface;
 
 function printShellHelp(): void {
-    console.log("\nUsage:");
-    console.log("  nuvo-config <command> <arguments_for_command>")
-    console.log("  nuvo-config <command> <arguments_for_command> [<options>]\n")
-    // console.log("<command> can be one of:")
-    // for (var command of commands) {
-    //     console.log(`    ${command}`)
-    // }
-    console.log("\n<options> can be one of:");
-    for (var option of options) {
-        console.log(`    ${option}`)
-    }
+    logger.info("Usage:");
+    logger.info("  nuvo-config <path_to_serial_port>")
 }
 
 function printCommandHelp(cmd?: string): void {
     if (cmd)
-        console.log(`\`${cmd}\` was not called with the correct arguments\n`);
-    console.log("Nuvo Config runs in:");
-    console.log("    Sentence Mode: string together commands to quickly change setup")
-    console.log("        ex. `zone 4 enable name \"Best Zone\"` - enables and renames zone 4")
-    console.log("        ex. `source 3 disable` - disables source 3\n")
-    // console.log("    Wizard Mode: walks you through the setup process")
-    // console.log("        ex. `zone 4 wizard` - launches the wizard for zone 4")
-    // console.log("        ex. `wizard` - launches the wizard for all zones and sources\n")
-    console.log("Available Commands:")
-    console.log("    `source <source_number>` - set the source that config actions will apply to")
-    console.log("    `zone <zone_number>` - set the zone that config actions will apply to")
-    console.log("    `status` - get the current config status of the zone or source")
-    console.log("    `enable` - enable the selected zone or source")
-    console.log("    `disable` - disable the selected zone or source")
-    console.log("    `name <new_name>` - set the name of a selected zone or soure")
-    console.log("    `shortname <three_letter_name>` - set the three letter shortname for a source")
-    console.log("    `gain <gain_value>` - set the gain value for a source (0-14)")
+        logger.info(`\`${cmd}\` was not called with the correct arguments\n`);
+    logger.info("Nuvo Config runs in:");
+    logger.info("    Sentence Mode: string together commands to quickly change setup")
+    logger.info("        ex. `zone 4 enable name \"Best Zone\"` - enables and renames zone 4")
+    logger.info("        ex. `source 3 disable` - disables source 3\n")
+    // logger.info("    Wizard Mode: walks you through the setup process")
+    // logger.info("        ex. `zone 4 wizard` - launches the wizard for zone 4")
+    // logger.info("        ex. `wizard` - launches the wizard for all zones and sources\n")
+    logger.info("Available Commands:")
+    logger.info("    `source <source_number>` - set the source that config actions will apply to\n            (1-20) (0 to apply to all)")
+    logger.info("    `zone <zone_number>` - set the zone that config actions will apply to\n            (1-6) (0 to apply to all)")
+    logger.info("    `status` - get the current config status of the zone or source")
+    logger.info("    `enable` - enable the selected zone or source")
+    logger.info("    `disable` - disable the selected zone or source")
+    logger.info("    `name <new_name>` - set the name of a selected zone or soure\n")
+
+    logger.info("    `shortname <three_letter_name>` - set the three letter shortname for a source")
+    logger.info("    `gain <gain_value>` - set the gain value for a source (0 - 14)\n")
+
+    logger.info("    `eq` - get the current eq config for a zone")
+    logger.info("    `bass <bass_value>` - set the bass value for a zone (-18 - 18)")
+    logger.info("    `treble <treble_value>` - set the treble value for a zone (-18 - 18)")
+    logger.info("    `balance <balance_value>` - set the left/right balance value for a zone (-18 - 18)")
+    logger.info("    `loudcomp (enable | disable)` - enable/disable loudness compensation")
+
+
 }
 
 function argSplitString(data: string): string[] {
@@ -61,20 +100,21 @@ function argSplitString(data: string): string[] {
 
 
     for (var c of data) {
-        if (escapeNext)
+        if (escapeNext) {
             currentArg += c;
-        else if (c == '\"')
+            escapeNext = false;
+        } else if (c === '\"') {
             doubleQCount = !doubleQCount;
-        else if (c == '\'')
+        } else if (c === '\'') {
             singleQCount = !singleQCount;
-        else if (c == "\\")
+        } else if (c === "\\") {
             escapeNext = true;
-        else if (c == ' ' && !singleQCount && !doubleQCount) {
+        } else if (c === ' ' && !singleQCount && !doubleQCount) {
             args.push(currentArg);
             currentArg = "";
-        }
-        else
+        } else {
             currentArg += c;
+        }
     }
     args.push(currentArg);
     currentArg = "";
@@ -84,38 +124,20 @@ function argSplitString(data: string): string[] {
 
 var args: string[] = process.argv.slice(2);
 
-while (args.length > 0) {
-    let current: string = args.shift();
 
-    if (args.length > 0 && current.substring(0, 1) === "-")
-    {
-        // Options switch
-        switch (current) {
-            case '-p':
-            case '--port':
-                port = args.shift();
-                break;
-            case '-h':
-            case '--help':
-            default:
-                console.log(current, "is not a registered nuvo-config option");
-                args.shift();
-                printShellHelp();
-        }
-    }
-}
-
-// console.log("\nPort:", port, "NumZones:", numZones);
+// logger.info("\nPort:", port, "NumZones:", numZones);
 
 class CLIPlatform
 {
     cli: number;
+    outstandingCmds: number;
 
     constructor() {
         this.cli = 1;
+        this.outstandingCmds = 0;
     }
 
-    prompt() {
+    prompt () {
         rl.prompt();
     }
 
@@ -124,122 +146,163 @@ class CLIPlatform
     }
 }
 
-function checkZoneCommand(zone: number, callback) {
-    if (zone != -1)
+function checkZoneCommand(zone: number, callback: any) {
+    if (zone === -1) {
+        logger.info("Please specify a valid zone");
+        cli.prompt();
+    } else if (zone === 0) {
+        for (let z=1; z<=MAX_ZONES; z++) {
+            cli.outstandingCmds++;
+            callback(z);
+        }
+    } else {
+        cli.outstandingCmds++;
         callback(zone);
-    else
-        console.log("Please specify a valid zone");
+    }
 }
 
-function checkSourceCommand(source: number, callback) {
-    if (source != -1)
+function checkSourceCommand(source: number, callback: any) {
+    if (source === -1) {
+        logger.info("Please specify a valid source");
+        cli.prompt();
+    } else if (source === 0) {
+        for (let s=1; s<=MAX_SOURCES; s++) {
+            cli.outstandingCmds++;
+            callback(s);
+        }
+    } else {
+        cli.outstandingCmds++;
         callback(source);
+    }
+}
+
+var cmdQueue = [];
+
+function hasNext() {
+    return cmdQueue.length > 0;
+}
+
+
+function getNext(word?: string) {
+    if (hasNext())
+        return cmdQueue.shift();
     else
-        console.log("Please specify a valid source");
+        logger.info(`Please enter the appropriate arguments for ${word}`);
+
+}
+
+/**
+* Min Exclusive, Max Inclusive, number grabbing
+*/
+function getNumber(min: number, max: number, step: number, word: string) {
+    if (hasNext())
+    {
+        let next = getNext(word);
+        let val = parseInt(next);
+        if (isNaN(val) || val <= min || val > max) {
+            logger.info(`Please enter a valid ${word} number between ${min+1} and ${max}`);
+            cmdQueue.unshift(next);
+            return min;
+        } else {
+            if (val % step != 0) {
+                val -= val % step;
+            }
+            return val
+        }
+    } else {
+        return min;
+    }
 }
 
 function parseConfigLine(line: string):void {
-    let cmdQueue = argSplitString(line);
+    cmdQueue = argSplitString(line);
 
     let zone = -1;
     let source = -1;
     let zoneMode = false;
 
-    while (cmdQueue.length > 0) {
-        let current: string = cmdQueue.shift();
+    while (hasNext()) {
+        let current: string = getNext();
 
         // Commands switch
         switch (current) {
             case 'zone':
-                if (cmdQueue.length > 0) {
-                    let val = parseInt(cmdQueue.shift());
-                    if (isNaN(val) || val <= 0 || val > MAX_ZONES)
-                        console.log("Please enter a valid zone number after the word zone");
-                    else
-                        zone = val;
-                        zoneMode = true;
-                } else {
-                    console.log(`\`${current}\` was not called with the correct arguments`);
-                    printCommandHelp();
-                }
+                zone = getNumber(-1, MAX_ZONES, 1, 'zone');
+                zoneMode = true;
                 break;
             case 'source':
-                if (cmdQueue.length > 0) {
-                    let val = parseInt(cmdQueue.shift());
-
-                    if (isNaN(val))
-                        console.log("Please enter a valid source number after the word source");
-                    else
-                        source = val
-                        zoneMode = false;
-                } else {
-                    printCommandHelp(current);
-                }
+                source = getNumber(-1, MAX_SOURCES, 1, 'zone');
+                zoneMode = false;
                 break;
             case 'enable':
                 if (zoneMode)
-                    checkZoneCommand(zone, (zone) => {serialConnection.zoneConfigEnable(zone, 1)});
+                    checkZoneCommand(zone, (zone: number) => {serialConnection.zoneConfigEnable(zone, 1)});
                 else
-                    checkSourceCommand(source, (source) => {serialConnection.sourceConfigEnable(source, 1)});
+                    checkSourceCommand(source, (source: number) => {serialConnection.sourceConfigEnable(source, 1)});
                 break;
             case 'disable':
                 if (zoneMode)
-                    checkZoneCommand(zone, (zone) => {serialConnection.zoneConfigEnable(zone, 0)});
+                    checkZoneCommand(zone, (zone: number) => {serialConnection.zoneConfigEnable(zone, 0)});
                 else
-                    checkSourceCommand(source, (source) => {serialConnection.sourceConfigEnable(source, 0)});
+                    checkSourceCommand(source, (source: number) => {serialConnection.sourceConfigEnable(source, 0)});
                 break;
             case 'name':
-                if (cmdQueue.length > 0)
-                {
-                    let name = cmdQueue.shift();
+                let name = getNext('name');
 
+                if (name != null) {
                     if (zoneMode)
-                        checkZoneCommand(zone, (zone) => {serialConnection.zoneConfigName(zone, name)});
+                        checkZoneCommand(zone, (zone: number) => {serialConnection.zoneConfigName(zone, name)});
                     else
-                        checkSourceCommand(source, (source) => {serialConnection.sourceConfigName(source, name)});
-                }
-                else
-                {
-                    printCommandHelp(current);
+                        checkSourceCommand(source, (source: number) => {serialConnection.sourceConfigName(source, name)});
                 }
                 break;
             case 'shortname':
-                if (cmdQueue.length > 0)
-                {
-                    let name = cmdQueue.shift();
+                let shortname = getNext('shortname');
 
-                    checkSourceCommand(source, (source) => {serialConnection.sourceConfigShortName(source, name)});
-                }
-                else
-                {
-                    printCommandHelp(current);
+                if (shortname != null) {
+                    checkSourceCommand(source, (source: number) => {serialConnection.sourceConfigShortName(source, shortname)});
                 }
                 break;
             case 'gain':
-                if (cmdQueue.length > 0)
-                {
-                    let val = parseInt(cmdQueue.shift());
-
-                    if (isNaN(val))
-                        console.log("Please enter a valid gain value after the word gain");
-                    else
-                        checkSourceCommand(source, (source) => {serialConnection.sourceConfigGain(source, val)});
-                }
-                else
-                {
-                    printCommandHelp(current);
-                }
+                let gain = getNumber(-1, MAX_GAIN, 1, 'gain');
+                if (gain != -1)
+                    checkSourceCommand(source, (source: number) => {serialConnection.sourceConfigGain(source, gain)});
                 break;
             case 'status':
                 if (zoneMode)
-                    checkZoneCommand(zone, (zone) => {serialConnection.zoneAskConfig(zone)});
+                    checkZoneCommand(zone, (zone: number) => {serialConnection.zoneAskConfig(zone)});
                 else
-                    checkSourceCommand(source, (source) => {serialConnection.sourceAskConfig(source)});
+                    checkSourceCommand(source, (source: number) => {serialConnection.sourceAskConfig(source)});
+                break;
+            case 'eq':
+                checkZoneCommand(zone, (zone: number) => {serialConnection.zoneAskEQ(zone)});
+                break;
+            case 'bass':
+                let bass = getNumber(-MAX_EIGHTTEEN-1, MAX_EIGHTTEEN, 2, 'bass');
+                if (bass != -MAX_EIGHTTEEN-1)
+                    checkZoneCommand(zone, (zone: number) => {serialConnection.zoneConfigBass(zone, bass)});
+                break;
+            case 'treble':
+                let treble = getNumber(-MAX_EIGHTTEEN-1, MAX_EIGHTTEEN, 2, 'treble');
+                if (treble != -MAX_EIGHTTEEN-1)
+                    checkZoneCommand(zone, (zone: number) => {serialConnection.zoneConfigTreble(zone, treble)});
+                break;
+            case 'balance':
+                let bal = getNumber(-MAX_EIGHTTEEN-1, MAX_EIGHTTEEN, 2, 'balance');
+                if (bal != -MAX_EIGHTTEEN-1)
+                    checkZoneCommand(zone, (zone: number) => {serialConnection.zoneConfigBalance(zone, bal)});
+                break;
+            case 'loudcomp':
+                let lc = getNext('loudcomp');
+                if (lc === "enable")
+                    checkZoneCommand(zone, (zone: number) => {serialConnection.zoneConfigLoudComp(zone, 1)});
+                else
+                    checkZoneCommand(zone, (zone: number) => {serialConnection.zoneConfigLoudComp(zone, 0)});
                 break;
             default:
-                console.log(`\`${current}\` is not a registered nuvo-config command`);
-
-            printCommandHelp();
+                logger.info(`\`${current}\` is not a registered nuvo-config command`);
+                printCommandHelp();
+                cli.prompt();
         }
     }
 }
@@ -255,30 +318,29 @@ function launchConsole():void {
 
     rl.on('line', (line: string) => {
         switch (line.trim()) {
-            case 'hello':
-                console.log('world!');
-                break;
             case 'help':
                 printCommandHelp();
+                cli.prompt();
                 break;
             default:
                 parseConfigLine(line);
                 break;
             case 'exit':
             case 'quit':
-                console.log('Bye!');
+                console.info('Bye!');
                 process.exit(0);
         }
-        rl.prompt();
     }).on('close', () => {
-        console.log('Bye!');
+        logger.info('Bye!');
         process.exit(0);
     });
 }
 
+if (args.length > 0) {
+    port = args.shift();
 
-let cli: CLIPlatform = new CLIPlatform();
-
-serialConnection = new serial.NuvoSerial(console, port, numZones, 0, cli);
-
-// launchConsole();
+    var cli: CLIPlatform = new CLIPlatform();
+    serialConnection = new serial.NuvoSerial(logger, port, numZones, 0, cli);
+} else {
+    printShellHelp();
+}

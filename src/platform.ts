@@ -143,7 +143,7 @@ class NuvoPlatform implements DynamicPlatformPlugin {
 
         brightChar.on(CharacteristicEventTypes.SET, (value: CharacteristicValue, callback: CharacteristicSetCallback) =>
             {
-                if (value == 100)
+                if (value === 100)
                 {
                     var vol = 59;
                 }
@@ -235,7 +235,7 @@ class NuvoPlatform implements DynamicPlatformPlugin {
            vol = zoneStatus[3];
         }
 
-        if (vol == "MUTE")
+        if (vol === "MUTE")
         {
            var volume = 0;
         } else {
@@ -249,9 +249,9 @@ class NuvoPlatform implements DynamicPlatformPlugin {
             {
                 var lightService = this.zoneSourceCombo[zoneNum][source].getService(hap.Service.Lightbulb);
 
-                if (lightService.getCharacteristic(hap.Characteristic.On).value != (source == sourceOn))
+                if (lightService.getCharacteristic(hap.Characteristic.On).value != (source === sourceOn))
                 {
-                    lightService.updateCharacteristic(hap.Characteristic.On, (source == sourceOn));
+                    lightService.updateCharacteristic(hap.Characteristic.On, (source === sourceOn));
                 }
 
                 if (lightService.getCharacteristic(hap.Characteristic.Brightness).value != volume)
