@@ -37,8 +37,14 @@ const logger = createLogger({
     levels: customLevels.levels,
     level: 'nuvo',
     format: format.combine(
-      format.colorize(),
-      format.simple()
+        format.colorize({all: true}),
+        format.printf(info => {
+            const {
+                level, message, ...args
+            } = info;
+
+            return `${Object.keys(args).length ? JSON.stringify(args, null, 2) : message}`;
+        }),
     ),
     transports: [
         new transports.Console()
@@ -340,6 +346,7 @@ if (args.length > 0) {
     port = args.shift();
 
     var cli: CLIPlatform = new CLIPlatform();
+    logger.info("Beginning serial connection");
     serialConnection = new serial.NuvoSerial(logger, port, numZones, 0, cli);
 } else {
     printShellHelp();

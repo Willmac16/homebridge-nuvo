@@ -235,7 +235,7 @@ class NuvoSerial {
                         formatted['enabled'] = false;
                     }
                 }
-                this.log.log('nuvo', JSON.stringify(formatted));
+                this.log.log('nuvo', formatted);
                 this.platform.outstandingCmds--;
                 if (this.platform.outstandingCmds <= 0) {
                     this.platform.prompt();

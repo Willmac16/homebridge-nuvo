@@ -32,8 +32,11 @@ const customLevels = {
 };
 const logger = winston_1.createLogger({
     levels: customLevels.levels,
-    level: 'debug',
-    format: winston_1.format.combine(winston_1.format.colorize(), winston_1.format.simple()),
+    level: 'nuvo',
+    format: winston_1.format.combine(winston_1.format.colorize({ all: true }), winston_1.format.printf(info => {
+        const { level, message, ...args } = info;
+        return `${Object.keys(args).length ? JSON.stringify(args, null, 2) : message}`;
+    })),
     transports: [
         new winston_1.transports.Console()
     ]
@@ -300,6 +303,7 @@ function launchConsole() {
 if (args.length > 0) {
     port = args.shift();
     var cli = new CLIPlatform();
+    logger.info("Beginning serial connection");
     serialConnection = new serial.NuvoSerial(logger, port, numZones, 0, cli);
 }
 else {
