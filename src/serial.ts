@@ -175,14 +175,14 @@ export class NuvoSerial
     zoneConfigBalance(zone: number, balance: number)
     {
         if (balance < 0) {
-            this.port.write(`*ZCFG${zone}BALL${balance}\r`);
-            this.log.debug(`*ZCFG${zone}BALL${balance}\r`);
+            this.port.write(`*ZCFG${zone}BALR${balance*-1}\r`);
+            this.log.debug(`*ZCFG${zone}BALR${balance*-1}\r`);
         } else if (balance === 0) {
             this.port.write(`*ZCFG${zone}BALC\r`);
             this.log.debug(`*ZCFG${zone}BALC\r`);
         } else {
-            this.port.write(`*ZCFG${zone}BALR${balance*-1}\r`);
-            this.log.debug(`*ZCFG${zone}BALR${balance*-1}\r`);
+            this.port.write(`*ZCFG${zone}BALL${balance}\r`);
+            this.log.debug(`*ZCFG${zone}BALL${balance}\r`);
         }
     }
 
@@ -287,7 +287,7 @@ export class NuvoSerial
             } else {
                 let formatted = {};
                 if ("#ZCFG" === parts[0].substring(0,5)) {
-                    formatted['zone'] = parts[0].substring(5);
+                    formatted['zone'] = parseInt(parts[0].substring(5));
                     if (parts[1].substring(0,6) === "ENABLE") {
                         if (parts[1].substring(6) === "1") {
                             formatted['enabled'] = true;
@@ -301,8 +301,19 @@ export class NuvoSerial
                     } else {
                         formatted['bass'] = parseInt(parts[1].substring(4));
                         formatted['treble'] = parseInt(parts[2].substring(4));
-                        formatted['balance'] = parts[3];
+                        if (parts[3].substring(3, 4) === "C") {
+                            formatted['balance'] = 0;
+                        } else {
+                            formatted['balance'] = parseInt(((parts[3].substring(3, 4) === "R") ? '+' : '-') + parts[3].substring(4));
+                        }
                         formatted['loudcomp'] = parts[4].substring(7) === "1";
+                    }
+
+                    this.log.log('nuvo', formatted);
+                    this.platform.outstandingCmds--;
+                    if (this.platform.outstandingCmds <= 0) {
+                        this.platform.prompt();
+                        this.platform.outstandingCmds = 0;
                     }
                 } else if ("#SCFG" === parts[0].substring(0,5)) {
                     formatted['source'] = parts[0].substring(5);
@@ -310,19 +321,19 @@ export class NuvoSerial
                     if (parts[1].substring(6) === "1") {
                         formatted['enabled'] = true;
                         formatted['name'] = parts[2].substring(5, parts[2].length-1);
-                        formatted['gain'] = parts[3].substring(4);
-                        formatted['nuvonet'] = parts[4].substring(7) === "1";
+                        formatted['gain'] = parseInt(parts[3].substring(4));
+                        // formatted['nuvonet'] = parts[4].substring(7) === "1";
                         formatted['shortname'] = parts[5].substring(10, 13);
                     } else {
                         formatted['enabled'] = false;
                     }
 
-                }
-                this.log.log('nuvo', formatted);
-                this.platform.outstandingCmds--;
-                if (this.platform.outstandingCmds <= 0) {
-                    this.platform.prompt();
-                    this.platform.outstandingCmds = 0;
+                    this.log.log('nuvo', formatted);
+                    this.platform.outstandingCmds--;
+                    if (this.platform.outstandingCmds <= 0) {
+                        this.platform.prompt();
+                        this.platform.outstandingCmds = 0;
+                    }
                 }
             }
         });

@@ -58,9 +58,8 @@ function printCommandHelp(cmd) {
     logger.info("    Sentence Mode: string together commands to quickly change setup");
     logger.info("        ex. `zone 4 enable name \"Best Zone\"` - enables and renames zone 4");
     logger.info("        ex. `source 3 disable` - disables source 3\n");
-    // logger.info("    Wizard Mode: walks you through the setup process")
-    // logger.info("        ex. `zone 4 wizard` - launches the wizard for zone 4")
-    // logger.info("        ex. `wizard` - launches the wizard for all zones and sources\n")
+    logger.info("    `help` - print this help text");
+    logger.info("    `exit` - exit nuvo-config\n");
     logger.info("Available Commands:");
     logger.info("    `source <source_number>` - set the source that config actions will apply to\n            (1-20) (0 to apply to all)");
     logger.info("    `zone <zone_number>` - set the zone that config actions will apply to\n            (1-6) (0 to apply to all)");

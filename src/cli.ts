@@ -70,28 +70,28 @@ function printCommandHelp(cmd?: string): void {
     if (cmd)
         logger.info(`\`${cmd}\` was not called with the correct arguments\n`);
     logger.info("Nuvo Config runs in:");
-    logger.info("    Sentence Mode: string together commands to quickly change setup")
-    logger.info("        ex. `zone 4 enable name \"Best Zone\"` - enables and renames zone 4")
-    logger.info("        ex. `source 3 disable` - disables source 3\n")
-    // logger.info("    Wizard Mode: walks you through the setup process")
-    // logger.info("        ex. `zone 4 wizard` - launches the wizard for zone 4")
-    // logger.info("        ex. `wizard` - launches the wizard for all zones and sources\n")
-    logger.info("Available Commands:")
-    logger.info("    `source <source_number>` - set the source that config actions will apply to\n            (1-20) (0 to apply to all)")
-    logger.info("    `zone <zone_number>` - set the zone that config actions will apply to\n            (1-6) (0 to apply to all)")
-    logger.info("    `status` - get the current config status of the zone or source")
-    logger.info("    `enable` - enable the selected zone or source")
-    logger.info("    `disable` - disable the selected zone or source")
-    logger.info("    `name <new_name>` - set the name of a selected zone or soure\n")
+    logger.info("    Sentence Mode: string together commands to quickly change setup");
+    logger.info("        ex. `zone 4 enable name \"Best Zone\"` - enables and renames zone 4");
+    logger.info("        ex. `source 3 disable` - disables source 3\n");
 
-    logger.info("    `shortname <three_letter_name>` - set the three letter shortname for a source")
-    logger.info("    `gain <gain_value>` - set the gain value for a source (0 - 14)\n")
+    logger.info("    `help` - print this help text");
+    logger.info("    `exit` - exit nuvo-config\n");
+    logger.info("Available Commands:");
+    logger.info("    `source <source_number>` - set the source that config actions will apply to\n            (1-20) (0 to apply to all)");
+    logger.info("    `zone <zone_number>` - set the zone that config actions will apply to\n            (1-6) (0 to apply to all)");
+    logger.info("    `status` - get the current config status of the zone or source");
+    logger.info("    `enable` - enable the selected zone or source");
+    logger.info("    `disable` - disable the selected zone or source");
+    logger.info("    `name <new_name>` - set the name of a selected zone or soure\n");
 
-    logger.info("    `eq` - get the current eq config for a zone")
-    logger.info("    `bass <bass_value>` - set the bass value for a zone (-18 - 18)")
-    logger.info("    `treble <treble_value>` - set the treble value for a zone (-18 - 18)")
-    logger.info("    `balance <balance_value>` - set the left/right balance value for a zone (-18 - 18)")
-    logger.info("    `loudcomp (enable | disable)` - enable/disable loudness compensation")
+    logger.info("    `shortname <three_letter_name>` - set the three letter shortname for a source");
+    logger.info("    `gain <gain_value>` - set the gain value for a source (0 - 14)\n");
+
+    logger.info("    `eq` - get the current eq config for a zone");
+    logger.info("    `bass <bass_value>` - set the bass value for a zone (-18 - 18)");
+    logger.info("    `treble <treble_value>` - set the treble value for a zone (-18 - 18)");
+    logger.info("    `balance <balance_value>` - set the left/right balance value for a zone (-18 - 18)");
+    logger.info("    `loudcomp (enable | disable)` - enable/disable loudness compensation");
 
 
 }
