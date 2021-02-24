@@ -27,4 +27,10 @@ The numZones option if for you to set the number of zones that your amplifier su
 The portRetryInterval option is the number of seconds to wait before retrying the serialport. If set to 0 or not set at all, it will not retry the connection.
 
 ## nuvo-config (optional)
-`nuvo-config` is an optional config tool installed with the plugin for configuration of the Nuvo Grand Concerto without using the Windows GUI.
+`nuvo-config` is an optional config tool installed with the plugin for configuration of the Nuvo Grand Concerto without using the Windows GUI. Run `nuvo-config <path_to_port>` or `sudo nuvo-config <path_to_port>` (depending on permissions) while homebridge is not running, and indside the config window run commands to tweak configuration (e.g. `zone 5 enable name "Best Zone" bass 4 treble -2 balance 6`).
+
+## Donating (optional)
+If you enjoy this plugin and would like to give me a tip, here is my [PayPal][paypal-me].   [![Tip via PayPal][paypal-button]][paypal-me]
+
+[paypal-button]: https://img.shields.io/badge/Donate-PayPal-green.svg
+[paypal-me]: https://www.paypal.me/WillMacCormack
