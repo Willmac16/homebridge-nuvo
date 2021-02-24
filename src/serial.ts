@@ -3,8 +3,7 @@ let Readline = require('@serialport/parser-readline')
 
 export const MAX_SOURCES: number = 6;
 
-export class NuvoSerial
-{
+export class NuvoSerial {
     portPath: string;
     numZones: number;
     log: Console;
@@ -16,8 +15,7 @@ export class NuvoSerial
 
     platform: any;
 
-    constructor(log: Console, portPath: string, numZones: number, portRetryInterval: number, platform: any)
-    {
+    constructor(log: Console, portPath: string, numZones: number, portRetryInterval: number, platform: any) {
         this.log = log;
         this.portPath = portPath;
         this.numZones = numZones;
@@ -33,34 +31,25 @@ export class NuvoSerial
         this.openPort();
     }
 
-    openPort()
-    {
-        this.port.open((err: any) =>
-        {
-            if (err)
-            {
-                if (this.portRetryInterval > 0)
-                {
+    openPort() {
+        this.port.open((err: any) => {
+            if (err) {
+                if (this.portRetryInterval > 0) {
                     this.log.info(`That serial port didn't open right now. I will try again in ${this.portRetryInterval/1000} second(s).`);
                     setTimeout(this.openPort.bind(this), this.portRetryInterval);
-                }
-                else
-                {
+                } else {
                     this.log.error("That port does not seem to exist (or this process doesn't have access to it).");
                     if (!this.platform.cli)
                         this.log.error("Consider changing the port or adding a port retry interval in the config.json file for homebridge.");
                     else
                         this.log.error("Consider specifying a port with -p <port_path>.");
                 }
-            }
-            else
-            {
+            } else {
                 this.log.info("Port setup process seems to have worked. Yay!");
                 this.parser = this.port.pipe(new Readline({ delimiter: '\r\n' }))
                 if (!this.platform.cli)
                     this.startTimers();
-                else
-                {
+                else {
                     setTimeout(this.sort.bind(this), 10);
                     setTimeout(this.platform.onPortOpen, 50);
                 }
@@ -69,111 +58,94 @@ export class NuvoSerial
     }
 
     //Zone functions
-    zoneOn(zone: number)
-    {
+    zoneOn(zone: number) {
         this.port.write(`*Z${zone}ON\r`);
         this.log.debug(`*Z${zone}ON\r`);
     }
 
-    zoneOff(zone: number)
-    {
+    zoneOff(zone: number) {
         this.port.write(`*Z${zone}OFF\r`);
         this.log.debug(`*Z${zone}OFF\r`);
     }
 
-    zoneSource(zone: number, source: number)
-    {
+    zoneSource(zone: number, source: number) {
         this.port.write(`*Z${zone}SRC${source}\r`);
         this.log.debug(`*Z${zone}SRC${source}\r`);
     }
 
-    zoneVolume(zone: number, volume: number)
-    {
+    zoneVolume(zone: number, volume: number) {
         this.port.write(`*Z${zone}VOL${volume}\r`);
         this.log.debug(`*Z${zone}VOL${volume}\r`);
     }
 
-    zoneMuteOn(zone: number)
-    {
+    zoneMuteOn(zone: number) {
         this.port.write(`*Z${zone}MUTEON\r`);
         this.log.debug(`*Z${zone}MUTEON\r`);
 
     }
 
-    zoneMuteOff(zone: number)
-    {
+    zoneMuteOff(zone: number) {
         this.port.write(`*Z${zone}MUTEOFF\r`);
         this.log.debug(`*Z${zone}MUTEOFF\r`);
 
     }
 
-    allOff()
-    {
+    allOff() {
         this.port.write(`*ALLOFF\r`);
         this.log.debug(`*ALLOFF\r`);
     }
 
     // Source config functions
 
-    sourceConfigName(source: number, name: string)
-    {
+    sourceConfigName(source: number, name: string) {
         this.port.write(`*SCFG${source}NAME\"${name}\"\r`);
         this.log.debug(`*SCFG${source}NAME\"${name}\"\r`);
     }
 
-    sourceConfigShortName(source: number, name: string)
-    {
+    sourceConfigShortName(source: number, name: string) {
         this.port.write(`*SCFG${source}SHORTNAME\"${name}\"\r`);
         this.log.debug(`*SCFG${source}SHORTNAME\"${name}\"\r`);
     }
 
-    sourceConfigEnable(source: number, enable: any)
-    {
+    sourceConfigEnable(source: number, enable: any) {
         this.port.write(`*SCFG${source}ENABLE${enable}\r`);
         this.log.debug(`*SCFG${source}ENABLE${enable}\r`);
     }
 
-    sourceConfigGain(source: number, gain: number)
-    {
+    sourceConfigGain(source: number, gain: number) {
         this.port.write(`*SCFG${source}GAIN\"${gain}\"\r`);
         this.log.debug(`*SCFG${source}GAIN\"${gain}\"\r`);
     }
 
 
-    sourceConfigNuvonet(source: number, nuvonet: any)
-    {
+    sourceConfigNuvonet(source: number, nuvonet: any) {
         this.port.write(`*SCFG${source}NUVONET${nuvonet}\r`);
         this.log.debug(`*SCFG${source}NUVONET${nuvonet}\r`);
     }
 
     // Zone Config functions
 
-    zoneConfigEnable(zone: number, enable: any)
-    {
+    zoneConfigEnable(zone: number, enable: any) {
         this.port.write(`*ZCFG${zone}ENABLE${enable}\r`);
         this.log.debug(`*ZCFG${zone}ENABLE${enable}\r`);
     }
 
-    zoneConfigName(zone: number, name: string)
-    {
+    zoneConfigName(zone: number, name: string) {
         this.port.write(`*ZCFG${zone}NAME\"${name}\"\r`);
         this.log.debug(`*ZCFG${zone}NAME\"${name}\"\r`);
     }
 
-    zoneConfigBass(zone: number, bass: number)
-    {
+    zoneConfigBass(zone: number, bass: number) {
         this.port.write(`*ZCFG${zone}BASS${bass}\r`);
         this.log.debug(`*ZCFG${zone}BASS${bass}\r`);
     }
 
-    zoneConfigTreble(zone: number, treble: number)
-    {
+    zoneConfigTreble(zone: number, treble: number) {
         this.port.write(`*ZCFG${zone}TREB${treble}\r`);
         this.log.debug(`*ZCFG${zone}TREB${treble}\r`);
     }
 
-    zoneConfigBalance(zone: number, balance: number)
-    {
+    zoneConfigBalance(zone: number, balance: number) {
         if (balance < 0) {
             this.port.write(`*ZCFG${zone}BALR${balance*-1}\r`);
             this.log.debug(`*ZCFG${zone}BALR${balance*-1}\r`);
@@ -186,55 +158,47 @@ export class NuvoSerial
         }
     }
 
-    zoneConfigLoudComp(zone: number, enable: any)
-    {
+    zoneConfigLoudComp(zone: number, enable: any) {
         this.port.write(`*ZCFG${zone}LOUDCMP${enable}\r`);
         this.log.debug(`*ZCFG${zone}LOUDCMP${enable}\r`);
     }
 
     //Status functions
-    zoneAskStatus(zone: number)
-    {
+    zoneAskStatus(zone: number) {
         this.port.write(`*Z${zone}STATUS?\r`);
         this.log.debug(`*Z${zone}STATUS?\r`);
     }
 
-    allZoneStatus()
-    {
+    allZoneStatus() {
        for (var i = 1; i <= this.numZones; i++) {
           var delay = ((i)*50);
           setTimeout(this.zoneAskStatus.bind(this), delay, i);
        }
     }
 
-    zoneAskConfig(zone: number)
-    {
+    zoneAskConfig(zone: number) {
         this.port.write(`*ZCFG${zone}STATUS?\r`);
         this.log.debug(`*ZCFG${zone}STATUS?\r`);
     }
 
-    zoneAskEQ(zone: number)
-    {
+    zoneAskEQ(zone: number) {
         this.port.write(`*ZCFG${zone}EQ?\r`);
         this.log.debug(`*ZCFG${zone}EQ?\r`);
     }
 
-    allZoneConfig()
-    {
+    allZoneConfig() {
        for (var i = 1; i <= this.numZones; i++) {
           var delay = ((i)*50);
           setTimeout(this.zoneAskConfig.bind(this), delay, i);
        }
     }
 
-    sourceAskConfig(source: number)
-    {
+    sourceAskConfig(source: number) {
         this.port.write(`*SCFG${source}STATUS?\r`);
         this.log.debug(`*SCFG${source}STATUS?\r`);
     }
 
-    allSourceConfig()
-    {
+    allSourceConfig() {
        for (var i = 1; i <= MAX_SOURCES; i++) {
           var delay = ((i)*50);
           setTimeout(this.sourceAskConfig.bind(this), delay, i);
@@ -242,8 +206,7 @@ export class NuvoSerial
     }
 
 
-    statusCheck(seconds: number)
-    {
+    statusCheck(seconds: number) {
        var interval = seconds * 1000;
        setInterval((log: Console, allZoneStatus: Function) => {
           log.debug("I am checking every " + seconds + " seconds.");
@@ -252,24 +215,18 @@ export class NuvoSerial
 
     }
 
-    listen(callback: (arg0: any) => any)
-    {
-       this.port.open(() =>
-       {
-          this.parser.on('data', function(data: string)
-          {
-             if (data.trim() !== '')
-             {
+    listen(callback: (arg0: any) => any) {
+       this.port.open(() => {
+          this.parser.on('data', function(data: string) {
+             if (data.trim() !== '') {
                 return callback(data);
              }
           });
        });
     }
 
-    sort()
-    {
-        this.listen((data) =>
-        {
+    sort() {
+        this.listen((data) => {
             var parts = data.split(",")
             if (!this.platform.cli) {
                 if ("#Z" === parts[0].substring(0,2)) {
@@ -339,8 +296,7 @@ export class NuvoSerial
         });
     }
 
-    startTimers()
-    {
+    startTimers() {
         this.log.debug("Starting the timers ");
         setTimeout(this.sort.bind(this), 1500);
         setTimeout(this.allSourceConfig.bind(this), 2000);

@@ -35,41 +35,40 @@ var serial: any;
 
 class NuvoPlatform implements DynamicPlatformPlugin {
     log: Logging;
-    private readonly api: API;
+    readonly api: API;
 
-    private readonly port: string;
-    private readonly numZones: number;
-    private readonly portRetryInterval: number;
+    readonly port: string;
+    readonly numZones: number;
+    readonly portRetryInterval: number;
     private serialConnection: NuvoSerial;
 
-    private readonly zoneConfigs: string[][];
-    private readonly sourceConfigs: string[][];
+    readonly zoneConfigs: string[][];
+    readonly sourceConfigs: string[][];
 
-    private readonly zoneSourceCombo: PlatformAccessory[][];
+    readonly zoneSource: number[];
+    readonly zoneVolume: number[];
 
-    constructor(log: Logging, config: PlatformConfig, api: API)
-    {
+    readonly zoneSourceCombo: PlatformAccessory[][];
+
+    constructor(log: Logging, config: PlatformConfig, api: API) {
         this.log = log;
         this.api = api;
 
-        if (config.port)
-        {
+        if (config.port) {
             this.port = config.port;
         } else {
             this.log.warn("Currently using a default port path. You should consider figuring out what your port is so this will actually work.");
             this.port = '/dev/tty.usbserial';
         }
 
-        if (config.numZones)
-        {
+        if (config.numZones) {
           this.numZones = config.numZones;
           this.numZones = config.numZones;
         } else {
           this.numZones = 8;
         }
 
-        if (config.portRetryInterval)
-        {
+        if (config.portRetryInterval) {
           this.portRetryInterval = config.portRetryInterval * 1000;
         } else {
           this.portRetryInterval = 0;
@@ -77,18 +76,22 @@ class NuvoPlatform implements DynamicPlatformPlugin {
 
         serial = require("./serial");
 
-        this.zoneSourceCombo = new Array(this.numZones + 1);
+        const zoneArrayLength: number = this.numZones + 1;
+
+        this.zoneSourceCombo = new Array(zoneArrayLength);
 
         const sourceArrayLength: number = serial.MAX_SOURCES + 1;
 
 
-        for (var i = 1; i < this.zoneSourceCombo.length; i++)
-        {
+        for (var i = 1; i < this.zoneSourceCombo.length; i++) {
             this.zoneSourceCombo[i] = new Array(sourceArrayLength);
         }
 
-        this.zoneConfigs = new Array(this.numZones + 1);
+        this.zoneConfigs = new Array(zoneArrayLength);
         this.sourceConfigs = new Array(sourceArrayLength);
+
+        this.zoneSource = new Array(zoneArrayLength);
+        this.zoneVolume = new Array(zoneArrayLength);
 
         api.on(APIEvent.DID_FINISH_LAUNCHING, () => {
             this.serialConnection = new serial.NuvoSerial(this.log, this.port, this.numZones, this.portRetryInterval, this);
@@ -97,8 +100,7 @@ class NuvoPlatform implements DynamicPlatformPlugin {
 
 
     // Make sure this works and doesn't break a promise
-    configureAccessory(accessory: PlatformAccessory)
-    {
+    configureAccessory(accessory: PlatformAccessory) {
         this.log.debug(`adding ${accessory.context.zone}, ${accessory.context.source}`);
 
         accessory.getService(hap.Service.AccessoryInformation)
@@ -109,65 +111,57 @@ class NuvoPlatform implements DynamicPlatformPlugin {
 
         const onChar = accessory.getService(hap.Service.Lightbulb).getCharacteristic(hap.Characteristic.On);
 
-        onChar.on(CharacteristicEventTypes.SET, (value: CharacteristicValue, callback: CharacteristicSetCallback) =>
-            {
-                if (value === true)
-                {
+        onChar.on(CharacteristicEventTypes.SET, (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
+                if (value === true) {
                     this.serialConnection.zoneOn(accessory.context.zone);
                     this.serialConnection.zoneSource(accessory.context.zone, accessory.context.source);
-                }
-                else
-                {
+                } else {
                     this.serialConnection.zoneOff(accessory.context.zone);
                 }
 
                 this.serialConnection.zoneAskStatus(accessory.context.zone);
-                callback(undefined, value);
+                callback();
             });
 
-        onChar.on(CharacteristicEventTypes.GET, (callback: CharacteristicSetCallback) =>
-            {
+        onChar.on(CharacteristicEventTypes.GET, (callback: CharacteristicSetCallback) => {
                 this.serialConnection.zoneAskStatus(accessory.context.zone);
-
-                callback();
+                let on = this.zoneSource[accessory.context.zone] === accessory.context.source;
+                callback(undefined, on);
             });
 
         const brightChar = accessory.getService(hap.Service.Lightbulb).getCharacteristic(hap.Characteristic.Brightness);
 
-        brightChar.on(CharacteristicEventTypes.GET, (callback: CharacteristicSetCallback) =>
-            {
+        brightChar.on(CharacteristicEventTypes.GET, (callback: CharacteristicSetCallback) => {
                 this.serialConnection.zoneAskStatus(accessory.context.zone);
-
-                callback();
+                let on = this.zoneSource[accessory.context.zone] === accessory.context.source;
+                if (on) {
+                    let vol = this.zoneVolume[accessory.context.zone];
+                    callback(undefined, vol);
+                } else {
+                    callback(undefined, 0);
+                }
             });
 
-        brightChar.on(CharacteristicEventTypes.SET, (value: CharacteristicValue, callback: CharacteristicSetCallback) =>
-            {
-                if (value === 100)
-                {
+        brightChar.on(CharacteristicEventTypes.SET, (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
+                if (value === 100) {
                     var vol = 59;
-                }
-                else
-                {
-
+                } else {
                     var vol = Math.round((Number(value)*(79/100)-79)*-1);
                 }
                 this.serialConnection.zoneVolume(accessory.context.zone, vol);
-                callback(undefined, value);
+                callback();
             });
 
         this.zoneSourceCombo[accessory.context.zone][accessory.context.source] = accessory;
     }
 
-    addAccessory(zoneNum: number, sourceNum: number)
-    {
-        if (!this.zoneSourceCombo[zoneNum][sourceNum])
-        {
+    addAccessory(zoneNum: number, sourceNum: number) {
+        if (!this.zoneSourceCombo[zoneNum][sourceNum]) {
             const accessoryName = this.zoneConfigs[zoneNum][2].substring(5, (this.zoneConfigs[zoneNum][2].length-1))
             + " " + this.sourceConfigs[sourceNum][2].substring(5, (this.sourceConfigs[sourceNum][2].length-1));
 
             this.log.debug(accessoryName);
-            const accessoryUUID =  hap.uuid.generate(accessoryName+zoneNum+sourceNum);
+            const accessoryUUID = hap.uuid.generate(accessoryName+zoneNum+sourceNum);
             this.log.debug(accessoryUUID);
 
             const accessory = new Accessory(accessoryName, accessoryUUID);
@@ -183,83 +177,79 @@ class NuvoPlatform implements DynamicPlatformPlugin {
         }
     }
 
-    addZone(zone: number, zoneCfg: string[])
-    {
+    addZone(zone: number, zoneCfg: string[]) {
         this.zoneConfigs[zone] = zoneCfg;
 
         // code to add all sources for this zone
-        if (this.zoneConfigs[zone][1] === "ENABLE1")
-        {
-            for (var source = 1; source <= serial.MAX_SOURCES; source++)
-            {
-                if (this.sourceConfigs[source] && this.sourceConfigs[source][1] === "ENABLE1")
-                {
+        if (this.zoneConfigs[zone][1] === "ENABLE1") {
+            for (var source = 1; source <= serial.MAX_SOURCES; source++) {
+                if (this.sourceConfigs[source] && this.sourceConfigs[source][1] === "ENABLE1") {
                     this.addAccessory(zone, source);
                 }
             }
+
+            this.zoneSource[zone] = 0;
+            this.zoneVolume[zone] = 0;
         }
     }
 
-    addSource(source: number, sourceCfg: string[])
-    {
+    addSource(source: number, sourceCfg: string[]) {
         this.sourceConfigs[source] = sourceCfg;
 
 
-        if (this.sourceConfigs[source][1] === "ENABLE1")
-        {
-            for (var zone = 1; zone <= this.numZones; zone++)
-            {
-                if (this.zoneConfigs[zone] && this.zoneConfigs[zone][1] === "ENABLE1")
-                {
+        if (this.sourceConfigs[source][1] === "ENABLE1") {
+            for (var zone = 1; zone <= this.numZones; zone++) {
+                if (this.zoneConfigs[zone] && this.zoneConfigs[zone][1] === "ENABLE1") {
                     this.addAccessory(zone, source);
                 }
             }
         }
     }
 
-    updateZone(zoneNum: number, zoneStatus: string[])
-    {
+    updateZone(zoneNum: number, zoneStatus: string[]) {
         // code to update all things for that zone
 
         let sourceOn = 0;
 
-        if (zoneStatus[1] === "ON")
-        {
+        if (zoneStatus[1] === "ON") {
             sourceOn = Number(zoneStatus[2].substring(3));
         }
 
+        let lastSource = this.zoneSource[zoneNum];
+        this.zoneSource[zoneNum] = sourceOn;
+
+
         let vol = "VOL79";
 
-        if (zoneStatus[3])
-        {
+        if (zoneStatus[3]) {
            vol = zoneStatus[3];
         }
 
-        if (vol === "MUTE")
-        {
+        if (vol === "MUTE") {
            var volume = 0;
         } else {
            var vnum = (parseInt(vol.substring(3)));
            var volume = Math.round(((vnum*-1)+79)*(100/79));
         }
 
-        for (var source = 1; source <= serial.MAX_SOURCES; source++)
-        {
-            if (this.zoneSourceCombo[zoneNum][source])
-            {
-                var lightService = this.zoneSourceCombo[zoneNum][source].getService(hap.Service.Lightbulb);
+        let lastVol = this.zoneVolume[zoneNum];
+        this.zoneVolume[zoneNum] = volume;
 
-                if (lightService.getCharacteristic(hap.Characteristic.On).value != (source === sourceOn))
-                {
-                    lightService.updateCharacteristic(hap.Characteristic.On, (source === sourceOn));
-                }
-
-                if (lightService.getCharacteristic(hap.Characteristic.Brightness).value != volume)
-                {
-                    lightService.updateCharacteristic(hap.Characteristic.Brightness, volume);
-                }
+        if (lastSource !== sourceOn) {
+            if (lastSource !== 0) {
+                this.log.debug(`Messing with ${zoneNum} ${lastSource}`);
+                this.zoneSourceCombo[zoneNum][lastSource].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.On, false);
+                this.zoneSourceCombo[zoneNum][lastSource].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.Brightness, 0);
             }
-
+            if (sourceOn !== 0) {
+                this.log.debug(`Mess ${zoneNum} ${sourceOn}`);
+                this.zoneSourceCombo[zoneNum][sourceOn].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.On, true);
+                this.zoneSourceCombo[zoneNum][sourceOn].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.Brightness, volume);
+            }
+        } else if (lastVol !== volume) {
+            if (sourceOn !== 0) {
+                this.zoneSourceCombo[zoneNum][sourceOn].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.Brightness, volume);
+            }
         }
     }
 }
