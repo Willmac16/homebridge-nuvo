@@ -119,12 +119,12 @@ class NuvoPlatform implements DynamicPlatformPlugin {
                     this.serialConnection.zoneOff(accessory.context.zone);
                 }
 
-                this.serialConnection.zoneAskStatus(accessory.context.zone);
+                // this.serialConnection.zoneAskStatus(accessory.context.zone);
                 callback();
             });
 
         onChar.on(CharacteristicEventTypes.GET, (callback: CharacteristicSetCallback) => {
-                this.serialConnection.zoneAskStatus(accessory.context.zone);
+                // this.serialConnection.zoneAskStatus(accessory.context.zone);
                 let on = this.zoneSource[accessory.context.zone] === accessory.context.source;
                 callback(undefined, on);
             });
@@ -132,7 +132,7 @@ class NuvoPlatform implements DynamicPlatformPlugin {
         const brightChar = accessory.getService(hap.Service.Lightbulb).getCharacteristic(hap.Characteristic.Brightness);
 
         brightChar.on(CharacteristicEventTypes.GET, (callback: CharacteristicSetCallback) => {
-                this.serialConnection.zoneAskStatus(accessory.context.zone);
+                // this.serialConnection.zoneAskStatus(accessory.context.zone);
                 let on = this.zoneSource[accessory.context.zone] === accessory.context.source;
                 if (on) {
                     let vol = this.zoneVolume[accessory.context.zone];
@@ -153,6 +153,11 @@ class NuvoPlatform implements DynamicPlatformPlugin {
             });
 
         this.zoneSourceCombo[accessory.context.zone][accessory.context.source] = accessory;
+
+        if (!this.zoneSource[accessory.context.zone]) {
+            this.zoneSource[accessory.context.zone] = 0;
+            this.zoneVolume[accessory.context.zone] = 0;
+        }
     }
 
     addAccessory(zoneNum: number, sourceNum: number) {
@@ -187,9 +192,6 @@ class NuvoPlatform implements DynamicPlatformPlugin {
                     this.addAccessory(zone, source);
                 }
             }
-
-            this.zoneSource[zone] = 0;
-            this.zoneVolume[zone] = 0;
         }
     }
 
@@ -208,6 +210,7 @@ class NuvoPlatform implements DynamicPlatformPlugin {
 
     updateZone(zoneNum: number, zoneStatus: string[]) {
         // code to update all things for that zone
+        this.log.debug(`update zone ${zoneNum} with ${zoneStatus}`);
 
         let sourceOn = 0;
 
