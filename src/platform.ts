@@ -106,7 +106,7 @@ class NuvoPlatform implements DynamicPlatformPlugin {
         accessory.getService(hap.Service.AccessoryInformation)
             .setCharacteristic(hap.Characteristic.Manufacturer, "Will MacCormack")
             .setCharacteristic(hap.Characteristic.Model, "Nuvo Speaker")
-            .setCharacteristic(hap.Characteristic.SerialNumber, "NVGC")
+            .setCharacteristic(hap.Characteristic.SerialNumber, "NVGC-"+accessory.context.zone+"-"+accessory.context.source)
             .setCharacteristic(hap.Characteristic.FirmwareRevision, "2.0.0");
 
         const onChar = accessory.getService(hap.Service.Lightbulb).getCharacteristic(hap.Characteristic.On);
