@@ -224,27 +224,28 @@ class NuvoPlatform implements DynamicPlatformPlugin {
             sourceOn = Number(zoneStatus[2].substring(3));
         }
 
-        if (this.zoneSource[zoneNum]) {
-            let lastSource = this.zoneSource[zoneNum];
-            this.zoneSource[zoneNum] = sourceOn;
-    
-    
-            let vol = "VOL79";
-    
-            if (zoneStatus[3]) {
-               vol = zoneStatus[3];
-            }
-    
-            if (vol === "MUTE") {
-               var volume = 0;
-            } else {
-               var vnum = (parseInt(vol.substring(3)));
-               var volume = Math.round(((vnum*-1)+79)*(100/79));
-            }
-    
-            let lastVol = this.zoneVolume[zoneNum];
-            this.zoneVolume[zoneNum] = volume;
-    
+        
+        let lastSource = this.zoneSource[zoneNum];
+        this.zoneSource[zoneNum] = sourceOn;
+
+
+        let vol = "VOL79";
+
+        if (zoneStatus[3]) {
+            vol = zoneStatus[3];
+        }
+
+        if (vol === "MUTE") {
+            var volume = 0;
+        } else {
+            var vnum = (parseInt(vol.substring(3)));
+            var volume = Math.round(((vnum*-1)+79)*(100/79));
+        }
+
+        let lastVol = this.zoneVolume[zoneNum];
+        this.zoneVolume[zoneNum] = volume;
+            
+        if (this.zoneSourceCombo[zoneNum][lastSource]) {
             if (lastSource !== sourceOn) {
                 if (lastSource !== 0) {
                     this.log.debug(`Messing with ${zoneNum} ${lastSource}`);
