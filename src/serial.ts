@@ -227,6 +227,7 @@ export class NuvoSerial {
 
     sort() {
         this.listen((data) => {
+            this.log.debug('nuvo', data);
             var parts = data.split(",")
             if (!this.platform.cli) {
                 if ("#Z" === parts[0].substring(0,2)) {

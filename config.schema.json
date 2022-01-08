@@ -20,6 +20,14 @@
         "maximum": 16,
         "required": true
       },
+      "powerOnVolume": {
+        "title": "Power on Volume",
+        "type": "number",
+        "default": 40,
+        "minimum": 0,
+        "maximum": 100,
+        "required": false
+      },
       "portRetryInterval": {
         "title": "Port Retry Interval",
         "type": "number",

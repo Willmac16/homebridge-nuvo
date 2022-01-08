@@ -4,7 +4,6 @@ This is a homebridge plugin for that allows serial control of nuvo whole home au
 It is set up as a platform so it will do discovery of zones and sources for you
 Each zone source combo has its own switch and brightness.
 This allows for siri control of your nuvo whole house audio system.
-One thing of note is that 100 Volume is not enabled (it sets it to 24%) so that when the home app turns a zone on, it will not blast music at you at full volume.
 
 ## Sample Config:
 ```
@@ -14,20 +13,24 @@ One thing of note is that 100 Volume is not enabled (it sets it to 24%) so that 
       "platform": "nuvo-platform",
       "port": "/dev/tty.usbserial",
       "numZones": 8,
+      "powerOnVolume": 50,
       "portRetryInterval": 120
     }
     ]
 ```
 ### Options:
-The port option is for you to set the path to the nuvo.
+`port` sets the path to the nuvo.
 If you are using a usb to rs232 adapter cable with a pl2303 or something similar, then run the command ```dmesg | grep -i usb``` and find a line like ```usb 3-2: pl2303 converter now attached to ttyUSB0```. The now attached to ????? should go into the config like ```"port": "/dev/?????"```.
 
-The numZones option if for you to set the number of zones that your amplifier supports for zone detection purposes.
+`numZones` lets you set the number of zones that your amplifier supports for zone detection purposes. If you have disabled zones, set numZones to the number of the highest enabled zone (e.g. zones 1, 4, & 6 are enabled so numZones = 6)
 
-The portRetryInterval option is the number of seconds to wait before retrying the serialport. If set to 0 or not set at all, it will not retry the connection.
+`powerOnVolume` sets the volume that a zone will go to when turned on by the plugin.
+Because of the way that the home app works (i.e. sending a 100% brightness command when told to turn on a "light"), this plugin will override any homekit requests to set a zone to 100% with this value
+
+`portRetryInterval` is the number of seconds to wait before retrying the serialport. If set to 0 or not set at all, it will not retry the connection.
 
 ## nuvo-config (optional)
-`nuvo-config` is an optional config tool installed with the plugin for configuration of the Nuvo Grand Concerto without using the Windows GUI. Run `nuvo-config <path_to_port>` or `sudo nuvo-config <path_to_port>` (depending on permissions) while homebridge is not running, and indside the config window run commands to tweak configuration (e.g. `zone 5 enable name "Best Zone" bass 4 treble -2 balance 6`).
+`nuvo-config` is an optional config tool installed with the plugin for configuration of the Nuvo Grand Concerto without using the Windows GUI. Run `nuvo-config <path_to_port>` or `sudo nuvo-config <path_to_port>` (depending on permissions) while homebridge is not running, and inside the config window run commands to tweak configuration (e.g. `zone 5 enable name "Best Zone" bass 4 treble -2 balance 6`).
 
 ## Donating (optional)
 If you enjoy this plugin and would like to give me a tip, here is my [PayPal][paypal-me].   [![Tip via PayPal][paypal-button]][paypal-me]

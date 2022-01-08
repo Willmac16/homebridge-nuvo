@@ -39,6 +39,7 @@ class NuvoPlatform implements DynamicPlatformPlugin {
 
     readonly port: string;
     readonly numZones: number;
+    readonly powOnVol: number;
     readonly portRetryInterval: number;
     private serialConnection: NuvoSerial;
 
@@ -63,9 +64,14 @@ class NuvoPlatform implements DynamicPlatformPlugin {
 
         if (config.numZones) {
           this.numZones = config.numZones;
-          this.numZones = config.numZones;
         } else {
           this.numZones = 8;
+        }
+
+        if (config.powerOnVolume) {
+            this.powOnVol = Math.round((Number(config.powerOnVolume)*(79/100)-79)*-1);
+        } else {
+            this.powOnVol = 59;
         }
 
         if (config.portRetryInterval) {
@@ -144,7 +150,7 @@ class NuvoPlatform implements DynamicPlatformPlugin {
 
         brightChar.on(CharacteristicEventTypes.SET, (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
                 if (value === 100) {
-                    var vol = 59;
+                    var vol = this.powOnVol;
                 } else {
                     var vol = Math.round((Number(value)*(79/100)-79)*-1);
                 }
@@ -218,41 +224,43 @@ class NuvoPlatform implements DynamicPlatformPlugin {
             sourceOn = Number(zoneStatus[2].substring(3));
         }
 
-        let lastSource = this.zoneSource[zoneNum];
-        this.zoneSource[zoneNum] = sourceOn;
-
-
-        let vol = "VOL79";
-
-        if (zoneStatus[3]) {
-           vol = zoneStatus[3];
-        }
-
-        if (vol === "MUTE") {
-           var volume = 0;
-        } else {
-           var vnum = (parseInt(vol.substring(3)));
-           var volume = Math.round(((vnum*-1)+79)*(100/79));
-        }
-
-        let lastVol = this.zoneVolume[zoneNum];
-        this.zoneVolume[zoneNum] = volume;
-
-        if (lastSource !== sourceOn) {
-            if (lastSource !== 0) {
-                this.log.debug(`Messing with ${zoneNum} ${lastSource}`);
-                this.zoneSourceCombo[zoneNum][lastSource].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.On, false);
-                this.zoneSourceCombo[zoneNum][lastSource].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.Brightness, 0);
+        if (this.zoneSource[zoneNum]) {
+            let lastSource = this.zoneSource[zoneNum];
+            this.zoneSource[zoneNum] = sourceOn;
+    
+    
+            let vol = "VOL79";
+    
+            if (zoneStatus[3]) {
+               vol = zoneStatus[3];
             }
-            if (sourceOn !== 0) {
-                this.log.debug(`Mess ${zoneNum} ${sourceOn}`);
-                this.zoneSourceCombo[zoneNum][sourceOn].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.On, true);
-                this.zoneSourceCombo[zoneNum][sourceOn].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.Brightness, volume);
+    
+            if (vol === "MUTE") {
+               var volume = 0;
+            } else {
+               var vnum = (parseInt(vol.substring(3)));
+               var volume = Math.round(((vnum*-1)+79)*(100/79));
             }
-        } else if (lastVol !== volume) {
-            if (sourceOn !== 0) {
-                this.zoneSourceCombo[zoneNum][sourceOn].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.Brightness, volume);
+    
+            let lastVol = this.zoneVolume[zoneNum];
+            this.zoneVolume[zoneNum] = volume;
+    
+            if (lastSource !== sourceOn) {
+                if (lastSource !== 0) {
+                    this.log.debug(`Messing with ${zoneNum} ${lastSource}`);
+                    this.zoneSourceCombo[zoneNum][lastSource].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.On, false);
+                    this.zoneSourceCombo[zoneNum][lastSource].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.Brightness, 0);
+                }
+                if (sourceOn !== 0) {
+                    this.log.debug(`Mess ${zoneNum} ${sourceOn}`);
+                    this.zoneSourceCombo[zoneNum][sourceOn].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.On, true);
+                    this.zoneSourceCombo[zoneNum][sourceOn].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.Brightness, volume);
+                }
+            } else if (lastVol !== volume) {
+                if (sourceOn !== 0) {
+                    this.zoneSourceCombo[zoneNum][sourceOn].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.Brightness, volume);
+                }
             }
-        }
+        }        
     }
 }
