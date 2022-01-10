@@ -104,8 +104,6 @@ class NuvoPlatform implements DynamicPlatformPlugin {
         });
     }
 
-
-    // Make sure this works and doesn't break a promise
     configureAccessory(accessory: PlatformAccessory) {
         this.log.debug(`adding ${accessory.context.zone}, ${accessory.context.source}`);
 
@@ -118,48 +116,48 @@ class NuvoPlatform implements DynamicPlatformPlugin {
         const onChar = accessory.getService(hap.Service.Lightbulb).getCharacteristic(hap.Characteristic.On);
 
         onChar.on(CharacteristicEventTypes.SET, (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
-                if (value === true) {
-                    this.serialConnection.zoneOn(accessory.context.zone);
-                    this.serialConnection.zoneSource(accessory.context.zone, accessory.context.source);
-                } else {
-                    this.serialConnection.zoneOff(accessory.context.zone);
-                }
+            if (value === true) {
+                this.serialConnection.zoneOn(accessory.context.zone);
+                this.serialConnection.zoneSource(accessory.context.zone, accessory.context.source);
+            } else {
+                this.serialConnection.zoneOff(accessory.context.zone);
+            }
 
-                // this.serialConnection.zoneAskStatus(accessory.context.zone);
-                callback();
-            });
+            callback();
+        });
 
         onChar.on(CharacteristicEventTypes.GET, (callback: CharacteristicSetCallback) => {
-                // this.serialConnection.zoneAskStatus(accessory.context.zone);
-                let on = this.zoneSource[accessory.context.zone] === accessory.context.source;
-                callback(undefined, on);
-            });
+            let on = this.zoneSource[accessory.context.zone] === accessory.context.source;
+            callback(undefined, on);
+        });
 
         const brightChar = accessory.getService(hap.Service.Lightbulb).getCharacteristic(hap.Characteristic.Brightness);
 
         brightChar.on(CharacteristicEventTypes.GET, (callback: CharacteristicSetCallback) => {
-                // this.serialConnection.zoneAskStatus(accessory.context.zone);
-                let on = this.zoneSource[accessory.context.zone] === accessory.context.source;
-                if (on) {
-                    let vol = this.zoneVolume[accessory.context.zone];
-                    callback(undefined, vol);
-                } else {
-                    callback(undefined, 0);
-                }
-            });
+            let on = this.zoneSource[accessory.context.zone] === accessory.context.source;
+            if (on) {
+                let vol = this.zoneVolume[accessory.context.zone];
+                callback(undefined, vol);
+            } else {
+                callback(undefined, 0);
+            }
+        });
 
         brightChar.on(CharacteristicEventTypes.SET, (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
-                if (value === 100) {
-                    var vol = this.powOnVol;
-                } else {
-                    var vol = Math.round((Number(value)*(79/100)-79)*-1);
-                }
-                this.serialConnection.zoneVolume(accessory.context.zone, vol);
-                callback();
-            });
+            // Logic to handle the power on to 100% behavior from home app
+            if (value === 100) {
+                var vol = this.powOnVol;
+                this.serialConnection.zoneOn(accessory.context.zone);
+            } else {
+                var vol = Math.round((Number(value)*(79/100)-79)*-1);
+            }
+            this.serialConnection.zoneVolume(accessory.context.zone, vol);
+            callback();
+        });
 
         this.zoneSourceCombo[accessory.context.zone][accessory.context.source] = accessory;
 
+        // create element for this plugin's tracking of zone state in source and volume
         if (!this.zoneSource[accessory.context.zone]) {
             this.zoneSource[accessory.context.zone] = 0;
             this.zoneVolume[accessory.context.zone] = 0;
@@ -188,6 +186,15 @@ class NuvoPlatform implements DynamicPlatformPlugin {
         }
     }
 
+    removeAccessory(zoneNum: number, sourceNum: number) {
+        if (this.zoneSourceCombo[zoneNum][sourceNum]) {
+            let accessory = this.zoneSourceCombo[zoneNum][sourceNum];
+
+            this.log.debug(`removing ${zoneNum}, ${sourceNum}`);
+            this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+        }
+    }
+
     addZone(zone: number, zoneCfg: string[]) {
         this.zoneConfigs[zone] = zoneCfg;
 
@@ -197,6 +204,10 @@ class NuvoPlatform implements DynamicPlatformPlugin {
                 if (this.sourceConfigs[source] && this.sourceConfigs[source][1] === "ENABLE1") {
                     this.addAccessory(zone, source);
                 }
+            }
+        } else {
+            for (var source = 1; source <= serial.MAX_SOURCES; source++) {
+                this.removeAccessory(zone, source);
             }
         }
     }
@@ -210,6 +221,10 @@ class NuvoPlatform implements DynamicPlatformPlugin {
                 if (this.zoneConfigs[zone] && this.zoneConfigs[zone][1] === "ENABLE1") {
                     this.addAccessory(zone, source);
                 }
+            }
+        } else {
+            for (var zone = 1; zone <= this.numZones; zone++) {
+                this.removeAccessory(zone, source);
             }
         }
     }
@@ -245,23 +260,21 @@ class NuvoPlatform implements DynamicPlatformPlugin {
         let lastVol = this.zoneVolume[zoneNum];
         this.zoneVolume[zoneNum] = volume;
             
-        if (this.zoneSourceCombo[zoneNum][lastSource]) {
-            if (lastSource !== sourceOn) {
-                if (lastSource !== 0) {
-                    this.log.debug(`Messing with ${zoneNum} ${lastSource}`);
-                    this.zoneSourceCombo[zoneNum][lastSource].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.On, false);
-                    this.zoneSourceCombo[zoneNum][lastSource].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.Brightness, 0);
-                }
-                if (sourceOn !== 0) {
-                    this.log.debug(`Mess ${zoneNum} ${sourceOn}`);
-                    this.zoneSourceCombo[zoneNum][sourceOn].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.On, true);
-                    this.zoneSourceCombo[zoneNum][sourceOn].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.Brightness, volume);
-                }
-            } else if (lastVol !== volume) {
-                if (sourceOn !== 0) {
-                    this.zoneSourceCombo[zoneNum][sourceOn].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.Brightness, volume);
-                }
+        if (lastSource !== sourceOn) {
+            if (lastSource !== 0 && this.zoneSourceCombo[zoneNum][lastSource]) {
+                this.log.debug(`Messing with ${zoneNum} ${lastSource}`);
+                this.zoneSourceCombo[zoneNum][lastSource].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.On, false);
+                this.zoneSourceCombo[zoneNum][lastSource].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.Brightness, 0);
             }
-        }        
+            if (sourceOn !== 0 && this.zoneSourceCombo[zoneNum][sourceOn]) {
+                this.log.debug(`Mess ${zoneNum} ${sourceOn}`);
+                this.zoneSourceCombo[zoneNum][sourceOn].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.On, true);
+                this.zoneSourceCombo[zoneNum][sourceOn].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.Brightness, volume);
+            }
+        } else if (lastVol !== volume) {
+            if (sourceOn !== 0) {
+                this.zoneSourceCombo[zoneNum][sourceOn].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.Brightness, volume);
+            }
+        }    
     }
 }
