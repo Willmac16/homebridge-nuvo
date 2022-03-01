@@ -1,6 +1,6 @@
 {
   "name": "homebridge-nuvo",
-  "version": "2.2.6",
+  "version": "2.2.7",
   "main": "dist/platform.js",
   "scripts": {
     "clean": "rimraf ./dist",
@@ -23,15 +23,15 @@
     "homebridge": ">=1.0.4"
   },
   "dependencies": {
-    "@serialport/parser-readline": ">=2.0.2",
-    "serialport": ">=7.1.5",
+    "@serialport/parser-readline": ">=10.0.0",
+    "serialport": "^10.3.0",
     "winston": "^3.3.3"
   },
   "devDependencies": {
     "@types/node": "10.17.19",
-    "typescript": ">=3.8.3",
+    "homebridge": ">=1.0.4",
     "rimraf": ">=3.0.2",
-    "homebridge": ">=1.0.4"
+    "typescript": ">=3.8.3"
   },
   "description": "This is a homebridge plugin for that allows serial control of nuvo whole home audio systems.",
   "bin": {

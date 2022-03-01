@@ -1,5 +1,5 @@
-let SerialPort = require('serialport')
-let Readline = require('@serialport/parser-readline')
+import { SerialPort } from 'serialport'
+import { ReadlineParser } from '@serialport/parser-readline'
 
 export const MAX_SOURCES: number = 6;
 
@@ -8,7 +8,7 @@ export class NuvoSerial {
     numZones: number;
     log: Console;
 
-    port: typeof SerialPort;
+    port: any;
     parser: any;
 
     portRetryInterval: number;
@@ -23,7 +23,8 @@ export class NuvoSerial {
         this.portRetryInterval = portRetryInterval;
         this.platform = platform;
 
-        this.port = new SerialPort(portPath, {
+        this.port = new SerialPort({
+           path: this.portPath,
            baudRate: 57600,
            autoOpen: false
         });
@@ -46,7 +47,7 @@ export class NuvoSerial {
                 }
             } else {
                 this.log.info("Port setup process seems to have worked. Yay!");
-                this.parser = this.port.pipe(new Readline({ delimiter: '\r\n' }))
+                this.parser = this.port.pipe(new ReadlineParser({ delimiter: '\r\n' }))
                 if (!this.platform.cli)
                     this.startTimers();
                 else {
