@@ -31,9 +31,3 @@ Because of the way that the home app works (i.e. sending a 100% brightness comma
 
 ## nuvo-config (optional)
 `nuvo-config` is an optional config tool installed with the plugin for configuration of the Nuvo Grand Concerto without using the Windows GUI. Run `nuvo-config <path_to_port>` or `sudo nuvo-config <path_to_port>` (depending on permissions) while homebridge is not running, and inside the config window run commands to tweak configuration (e.g. `zone 5 enable name "Best Zone" bass 4 treble -2 balance 6`).
-
-## Donating (optional)
-If you enjoy this plugin and would like to give me a tip, here is my [PayPal][paypal-me].   [![Tip via PayPal][paypal-button]][paypal-me]
-
-[paypal-button]: https://img.shields.io/badge/Donate-PayPal-green.svg
-[paypal-me]: https://www.paypal.me/WillMacCormack
