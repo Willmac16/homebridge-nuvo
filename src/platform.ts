@@ -148,10 +148,14 @@ class NuvoPlatform implements DynamicPlatformPlugin {
             if (value === 100) {
                 var vol = this.powOnVol;
                 this.serialConnection.zoneOn(accessory.context.zone);
+
+                // Set the volume to the power on volume config param 1 second in the future
+                setTimeout(this.serialConnection.zoneVolume.bind(this), 1000, accessory.context.zone, vol);
             } else {
                 var vol = Math.round((Number(value)*(79/100)-79)*-1);
+
+                this.serialConnection.zoneVolume(accessory.context.zone, vol);
             }
-            this.serialConnection.zoneVolume(accessory.context.zone, vol);
             callback();
         });
 
