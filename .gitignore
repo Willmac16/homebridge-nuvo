@@ -5,3 +5,6 @@
 .vscode
 *.pdf
 *.zip
+*.swp
+.DS_Store
+package-lock.json
