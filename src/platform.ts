@@ -69,10 +69,12 @@ class NuvoPlatform implements DynamicPlatformPlugin {
     }
 
     if (config.powerOnVolume) {
-      this.powOnVol = Math.round((Number(config.powerOnVolume) * (79 / 100) - 79) * -1);
+      this.powOnVol = this.centToDb(config.powerOnVolume);
     } else {
       this.powOnVol = 59;
     }
+
+    this.log.debug(`Plugin Configured w/ Power on Decibles of ${this.powOnVol}`);
 
     if (config.portRetryInterval) {
       this.portRetryInterval = config.portRetryInterval * 1000;
@@ -133,7 +135,8 @@ class NuvoPlatform implements DynamicPlatformPlugin {
         this.serialConnection.zoneOff(accessory.context.zone);
       }
 
-      callback();
+      // Let HomeKit know the new state ASAP
+      callback(undefined, value);
     });
 
     onChar.on(CharacteristicEventTypes.GET, (callback: CharacteristicSetCallback) => {
@@ -156,7 +159,7 @@ class NuvoPlatform implements DynamicPlatformPlugin {
     brightChar.on(CharacteristicEventTypes.SET, (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
       this.serialConnection.zoneOn(accessory.context.zone);
 
-      let vol = Math.round((Number(value) * (79 / 100) - 79) * -1);
+      let vol = this.centToDb(Number(value));
 
       // Logic to handle the power on to 100% behavior from home app
       if (value === 100) {
@@ -167,7 +170,11 @@ class NuvoPlatform implements DynamicPlatformPlugin {
       this.zone_volumes[accessory.context.zone] = vol;
 
       this.serialConnection.zoneVolume(accessory.context.zone, vol);
-      callback();
+
+      let callback_val = this.dbToCent(vol);
+
+      this.log.debug(`Setting Vol: Zone ${accessory.context.zone}; homekit-val ${value}; callback-val ${callback_val}`);
+      callback(undefined, callback_val);
     });
 
     this.zone_source_combos[accessory.context.zone][accessory.context.source] = accessory;
@@ -268,8 +275,8 @@ class NuvoPlatform implements DynamicPlatformPlugin {
     if (vol === "MUTE") {
       var volume = 0;
     } else {
-      var vnum = (parseInt(vol.substring(3)));
-      var volume = Math.round(((vnum * -1) + 79) * (100 / 79));
+      var vnum = parseInt(vol.substring(3));
+      var volume = this.dbToCent(vnum);
     }
 
 
@@ -299,5 +306,13 @@ class NuvoPlatform implements DynamicPlatformPlugin {
         this.zone_source_combos[zoneNum][sourceOn].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.Brightness, volume);
       }
     }
+  }
+
+  dbToCent(decibles: number): number {
+    return Math.round((79 - decibles) / 79 * 100);
+  }
+
+  centToDb(percentage: number): number {
+    return Math.round(79 - percentage / 100 * 79);
   }
 }

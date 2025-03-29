@@ -2,7 +2,7 @@
   "pluginAlias": "nuvo-platform",
   "pluginType": "platform",
   "singular": true,
-  "footerDisplay": "For More Help go to the [github page](https://github.com/Willmac16/homebridge-nuvo/blob/master/README.md).",
+  "footerDisplay": "For More Help go to the [github page](https://github.com/Willmac16/homebridge-nuvo/blob/main/README.md).",
   "schema": {
     "type": "object",
     "properties": {
