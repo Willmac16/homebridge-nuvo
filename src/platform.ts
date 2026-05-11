@@ -161,8 +161,11 @@ class NuvoPlatform implements DynamicPlatformPlugin {
 
       let vol = this.centToDb(Number(value));
 
+      let alreadyOn = this.zone_sources[accessory.context.zone] === accessory.context.source;
+
       // Logic to handle the power on to 100% behavior from home app
-      if (value === 100) {
+      // Should allow 100% only after initial power on
+      if (value === 100 && !alreadyOn) {
         vol = this.powOnVol;
       }
 
@@ -173,7 +176,7 @@ class NuvoPlatform implements DynamicPlatformPlugin {
 
       let callback_val = this.dbToCent(vol);
 
-      this.log.debug(`Setting Vol: Zone ${accessory.context.zone}; homekit-val ${value}; callback-val ${callback_val}`);
+      this.log.debug(`Setting Vol: Zone ${accessory.context.zone}; homekit-val ${value}; callback-val ${callback_val}; alreadyOn: ${alreadyOn}`);
       callback();
       brightChar.updateValue(callback_val);
     });
