@@ -41,6 +41,7 @@ class NuvoPlatform implements DynamicPlatformPlugin {
   readonly numZones: number;
   readonly powOnVol: number;
   readonly portRetryInterval: number;
+  readonly statusCheckInterval: number;
   private serialConnection: NuvoSerial;
 
   readonly zone_configs: string[][];
@@ -82,6 +83,8 @@ class NuvoPlatform implements DynamicPlatformPlugin {
       this.portRetryInterval = 0;
     }
 
+    this.statusCheckInterval = config.statusCheckInterval ?? 300;
+
     serial = require("./serial");
 
     const zoneArrayLength: number = this.numZones + 1;
@@ -102,7 +105,7 @@ class NuvoPlatform implements DynamicPlatformPlugin {
     this.zone_volumes = new Array(zoneArrayLength);
 
     api.on(APIEvent.DID_FINISH_LAUNCHING, () => {
-      this.serialConnection = new serial.NuvoSerial(this.log, this.port, this.numZones, this.portRetryInterval, this);
+      this.serialConnection = new serial.NuvoSerial(this.log, this.port, this.numZones, this.portRetryInterval, this.statusCheckInterval, this);
     });
   }
 
@@ -119,24 +122,37 @@ class NuvoPlatform implements DynamicPlatformPlugin {
 
     onChar.on(CharacteristicEventTypes.SET, (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
       if (value === true) {
+
+        let alreadyOn = this.zone_sources[accessory.context.zone] !== 0;
+        let existingVol = this.zone_volumes[accessory.context.zone];
+        let targetVol = 0;
+
+        // Only request powOnVol if its currently off & no vol request is outstanding
+        if (!alreadyOn) {
+          if (existingVol <= 0 || existingVol >= 100) {
+            targetVol = this.powOnVol;
+          }
+        }
+
+        this.log.debug(`Turning On Zone ${accessory.context.zone}: alreadyOn? ${alreadyOn}; existingVol ${existingVol} targetVol ${targetVol}`);
+
         this.serialConnection.zoneOn(accessory.context.zone);
         this.serialConnection.zoneSource(accessory.context.zone, accessory.context.source);
 
-        let alreadyOn = this.zone_sources[accessory.context.zone] === accessory.context.source;
-        let alreadyVol = this.zone_volumes[accessory.context.zone] !== 0;
-
-        this.log.debug(`Turning On Zone ${accessory.context.zone}: alreadyOn? ${alreadyOn}; existingVol ${this.zone_volumes[accessory.context.zone]}`);
-
-        if (!alreadyOn && !alreadyVol) {
-          this.serialConnection.zoneVolume(accessory.context.zone, this.powOnVol);
+        // Only command volume if we need to
+        if (targetVol > 0) {
+          this.serialConnection.zoneVolume(accessory.context.zone, targetVol);
+          brightChar.updateValue(this.dbToCent(targetVol));
         }
 
       } else {
+        this.log.debug(`Turning Off Zone ${accessory.context.zone}`);
         this.serialConnection.zoneOff(accessory.context.zone);
+        brightChar.updateValue(0);
       }
 
-      // Let HomeKit know the new state ASAP
-      callback(undefined, value);
+      callback();
+      onChar.updateValue(value);
     });
 
     onChar.on(CharacteristicEventTypes.GET, (callback: CharacteristicSetCallback) => {
@@ -157,13 +173,23 @@ class NuvoPlatform implements DynamicPlatformPlugin {
     });
 
     brightChar.on(CharacteristicEventTypes.SET, (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
-      this.serialConnection.zoneOn(accessory.context.zone);
-
+      let alreadyOn = this.zone_sources[accessory.context.zone] !== 0;
       let vol = this.centToDb(Number(value));
 
       // Logic to handle the power on to 100% behavior from home app
-      if (value === 100) {
+      // Should allow 100% only after initial power on
+      if (value === 100 && !alreadyOn) {
         vol = this.powOnVol;
+      }
+
+      let callback_val = this.dbToCent(vol);
+
+      this.log.debug(`Setting Vol: Zone ${accessory.context.zone}; homekit-request ${value}; actual-percent ${callback_val}; alreadyOn: ${alreadyOn}`);
+
+      if (!alreadyOn && Number(value) > 0) {
+        this.serialConnection.zoneOn(accessory.context.zone);
+        this.serialConnection.zoneSource(accessory.context.zone, accessory.context.source);
+        onChar.updateValue(true);
       }
 
       // Preemptively mark that zone volume was requested (so onChar -> on state doesn't override)
@@ -171,10 +197,8 @@ class NuvoPlatform implements DynamicPlatformPlugin {
 
       this.serialConnection.zoneVolume(accessory.context.zone, vol);
 
-      let callback_val = this.dbToCent(vol);
-
-      this.log.debug(`Setting Vol: Zone ${accessory.context.zone}; homekit-val ${value}; callback-val ${callback_val}`);
-      callback(undefined, callback_val);
+      callback();
+      brightChar.updateValue(callback_val);
     });
 
     this.zone_source_combos[accessory.context.zone][accessory.context.source] = accessory;
@@ -275,8 +299,17 @@ class NuvoPlatform implements DynamicPlatformPlugin {
     if (vol === "MUTE") {
       var volume = 0;
     } else {
+      // Convert a "VOL" + db reading into a percentage
       var vnum = parseInt(vol.substring(3));
       var volume = this.dbToCent(vnum);
+    }
+
+
+    // Weird Homekit behavior on zero (says we're at 100%)
+    // add in a small number to help
+    const epsilon = 1
+    if (volume === 0) {
+      volume += epsilon;
     }
 
 
@@ -288,16 +321,16 @@ class NuvoPlatform implements DynamicPlatformPlugin {
       this.zone_volumes[zoneNum] = 0;
     }
 
-    this.log.debug(`Zone Volume Check: source on ${sourceOn} vol ${vol} volume ${volume} zone_volumes[] ${this.zone_volumes[zoneNum]}`);
+    this.log.debug(`Zone Volume Status: zone ${zoneNum} source on ${sourceOn} vol string ${vol} volume ${volume} zone_volumes[] ${this.zone_volumes[zoneNum]}`);
 
     if (lastSource !== sourceOn) {
       if (lastSource !== 0 && this.zone_source_combos[zoneNum][lastSource]) {
-        this.log.debug(`Messing with ${zoneNum} ${lastSource}`);
+        this.log.debug(`Source change: turning off zone ${zoneNum} source ${lastSource}`);
         this.zone_source_combos[zoneNum][lastSource].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.On, false);
         this.zone_source_combos[zoneNum][lastSource].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.Brightness, 0);
       }
       if (sourceOn !== 0 && this.zone_source_combos[zoneNum][sourceOn]) {
-        this.log.debug(`Mess ${zoneNum} ${sourceOn}`);
+        this.log.debug(`Source change: turning on zone ${zoneNum} source ${sourceOn} at ${volume}%`);
         this.zone_source_combos[zoneNum][sourceOn].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.On, true);
         this.zone_source_combos[zoneNum][sourceOn].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.Brightness, volume);
       }

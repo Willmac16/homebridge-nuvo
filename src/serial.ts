@@ -12,15 +12,17 @@ export class NuvoSerial {
     parser: any;
 
     portRetryInterval: number;
+    statusCheckInterval: number;
 
     platform: any;
 
-    constructor(log: Console, portPath: string, numZones: number, portRetryInterval: number, platform: any) {
+    constructor(log: Console, portPath: string, numZones: number, portRetryInterval: number, statusCheckInterval: number, platform: any) {
         this.log = log;
         this.portPath = portPath;
         this.numZones = numZones;
 
         this.portRetryInterval = portRetryInterval;
+        this.statusCheckInterval = statusCheckInterval;
         this.platform = platform;
 
         this.port = new SerialPort({
@@ -300,10 +302,16 @@ export class NuvoSerial {
 
     startTimers() {
         this.log.debug("Starting the timers ");
-        setTimeout(this.sort.bind(this), 1500);
-        setTimeout(this.allSourceConfig.bind(this), 2000);
-        setTimeout(this.allZoneConfig.bind(this), 3500);
-        setTimeout(this.allZoneStatus.bind(this), 5000);
-        this.statusCheck(300);
+        let offset = 1500;
+        setTimeout(this.sort.bind(this), offset);
+        offset += 500;
+        setTimeout(this.allSourceConfig.bind(this), offset);
+        offset += 1500;
+        setTimeout(this.allZoneConfig.bind(this), offset);
+        offset += 1500;
+        setTimeout(this.allZoneStatus.bind(this), offset);
+        if (this.statusCheckInterval > 0) {
+            this.statusCheck(this.statusCheckInterval);
+        }
     }
 }
