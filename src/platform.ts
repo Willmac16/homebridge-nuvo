@@ -129,7 +129,7 @@ class NuvoPlatform implements DynamicPlatformPlugin {
 
         // Only request powOnVol if its currently off & no vol request is outstanding
         if (!alreadyOn) {
-          if (existingVol < 1e-5 || existingVol >= 100) {
+          if (existingVol <= 0 || existingVol >= 100) {
             targetVol = this.powOnVol;
           }
         }
@@ -142,11 +142,13 @@ class NuvoPlatform implements DynamicPlatformPlugin {
         // Only command volume if we need to
         if (targetVol > 0) {
           this.serialConnection.zoneVolume(accessory.context.zone, targetVol);
+          brightChar.updateValue(dbToCent(targetVol));
         }
 
       } else {
         this.log.debug(`Turning Off Zone ${accessory.context.zone}`);
         this.serialConnection.zoneOff(accessory.context.zone);
+        brightChar.updateValue(0);
       }
 
       callback();
@@ -174,7 +176,7 @@ class NuvoPlatform implements DynamicPlatformPlugin {
       let alreadyOn = this.zone_sources[accessory.context.zone] !== 0;
       let vol = this.centToDb(Number(value));
 
-    // Logic to handle the power on to 100% behavior from home app
+      // Logic to handle the power on to 100% behavior from home app
       // Should allow 100% only after initial power on
       if (value === 100 && !alreadyOn) {
         vol = this.powOnVol;
@@ -184,8 +186,10 @@ class NuvoPlatform implements DynamicPlatformPlugin {
 
       this.log.debug(`Setting Vol: Zone ${accessory.context.zone}; homekit-request ${value}; actual-percent ${callback_val}; alreadyOn: ${alreadyOn}`);
 
-      if (!alreadyOn) {
+      if (!alreadyOn && value > 0) {
         this.serialConnection.zoneOn(accessory.context.zone);
+        this.serialConnection.zoneSource(accessory.context.zone, accessory.context.source);
+        onChar.updateValue(true);
       }
 
       // Preemptively mark that zone volume was requested (so onChar -> on state doesn't override)
@@ -303,7 +307,7 @@ class NuvoPlatform implements DynamicPlatformPlugin {
 
     // Weird Homekit behavior on zero (says we're at 100%)
     // add in a small number to help
-    const epsilon = 1e-9
+    const epsilon = 1
     if (volume === 0) {
       volume += epsilon;
     }
