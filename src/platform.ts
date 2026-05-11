@@ -134,7 +134,7 @@ class NuvoPlatform implements DynamicPlatformPlugin {
           }
         }
 
-        this.log.debug(`Turning On Zone ${accessory.context.zone}: alreadyOn? ${alreadyOn}; existingVol ${existinVol} targetVol ${targetVol}`);
+        this.log.debug(`Turning On Zone ${accessory.context.zone}: alreadyOn? ${alreadyOn}; existingVol ${existingVol} targetVol ${targetVol}`);
 
         this.serialConnection.zoneOn(accessory.context.zone);
         this.serialConnection.zoneSource(accessory.context.zone, accessory.context.source);
