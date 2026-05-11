@@ -135,8 +135,8 @@ class NuvoPlatform implements DynamicPlatformPlugin {
         this.serialConnection.zoneOff(accessory.context.zone);
       }
 
-      // Let HomeKit know the new state ASAP
-      callback(undefined, value);
+      callback();
+      onChar.updateValue(value);
     });
 
     onChar.on(CharacteristicEventTypes.GET, (callback: CharacteristicSetCallback) => {
@@ -174,7 +174,8 @@ class NuvoPlatform implements DynamicPlatformPlugin {
       let callback_val = this.dbToCent(vol);
 
       this.log.debug(`Setting Vol: Zone ${accessory.context.zone}; homekit-val ${value}; callback-val ${callback_val}`);
-      callback(undefined, callback_val);
+      callback();
+      brightChar.updateValue(callback_val);
     });
 
     this.zone_source_combos[accessory.context.zone][accessory.context.source] = accessory;
