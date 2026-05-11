@@ -307,10 +307,10 @@ class NuvoPlatform implements DynamicPlatformPlugin {
 
     // Weird Homekit behavior on zero (says we're at 100%)
     // add in a small number to help
-    // const epsilon = 1
-    // if (volume === 0) {
-    //   volume += epsilon;
-    // }
+    const epsilon = 1
+    if (volume === 0) {
+      volume += epsilon;
+    }
 
 
     let lastVol = this.zone_volumes[zoneNum];
