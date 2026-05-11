@@ -124,14 +124,24 @@ class NuvoPlatform implements DynamicPlatformPlugin {
       if (value === true) {
 
         let alreadyOn = this.zone_sources[accessory.context.zone] !== 0;
+        let existingVol = this.zone_volumes[accessory.context.zone];
+        let tagetVol = 0;
 
-        this.log.debug(`Turning On Zone ${accessory.context.zone}: alreadyOn? ${alreadyOn}; existingVol ${this.zone_volumes[accessory.context.zone]}`);
+        // Only request powOnVol if its currently off & no vol request is outstanding
+        if (!alreadyOn) {
+          if (existingVol < 1e-5 || existingVol >= 100) {
+            targetVol = this.powOnVol;
+          }
+        }
+
+        this.log.debug(`Turning On Zone ${accessory.context.zone}: alreadyOn? ${alreadyOn}; existingVol ${existinVol} targetVol ${targetVol}`);
 
         this.serialConnection.zoneOn(accessory.context.zone);
         this.serialConnection.zoneSource(accessory.context.zone, accessory.context.source);
 
-        if (!alreadyOn) {
-          this.serialConnection.zoneVolume(accessory.context.zone, this.powOnVol);
+        // Only command volume if we need to
+        if (targetVol > 0) {
+          this.serialConnection.zoneVolume(accessory.context.zone, targetVol);
         }
 
       } else {
