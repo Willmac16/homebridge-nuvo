@@ -142,7 +142,7 @@ class NuvoPlatform implements DynamicPlatformPlugin {
         // Only command volume if we need to
         if (targetVol > 0) {
           this.serialConnection.zoneVolume(accessory.context.zone, targetVol);
-          brightChar.updateValue(dbToCent(targetVol));
+          brightChar.updateValue(this.dbToCent(targetVol));
         }
 
       } else {
@@ -186,7 +186,7 @@ class NuvoPlatform implements DynamicPlatformPlugin {
 
       this.log.debug(`Setting Vol: Zone ${accessory.context.zone}; homekit-request ${value}; actual-percent ${callback_val}; alreadyOn: ${alreadyOn}`);
 
-      if (!alreadyOn && value > 0) {
+      if (!alreadyOn && Number(value) > 0) {
         this.serialConnection.zoneOn(accessory.context.zone);
         this.serialConnection.zoneSource(accessory.context.zone, accessory.context.source);
         onChar.updateValue(true);
