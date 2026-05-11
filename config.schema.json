@@ -41,7 +41,7 @@
         "type": "number",
         "default": 300,
         "required": false,
-        "minimum": 1,
+        "minimum": 0,
         "description": "Frequency in seconds to poll all zone statuses. Defaults to 300 (5 minutes). 0 disables polling."
       }
 
