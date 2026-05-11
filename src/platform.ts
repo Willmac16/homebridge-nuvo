@@ -125,7 +125,7 @@ class NuvoPlatform implements DynamicPlatformPlugin {
 
         let alreadyOn = this.zone_sources[accessory.context.zone] !== 0;
         let existingVol = this.zone_volumes[accessory.context.zone];
-        let tagetVol = 0;
+        let targetVol = 0;
 
         // Only request powOnVol if its currently off & no vol request is outstanding
         if (!alreadyOn) {
