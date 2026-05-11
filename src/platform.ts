@@ -285,8 +285,17 @@ class NuvoPlatform implements DynamicPlatformPlugin {
     if (vol === "MUTE") {
       var volume = 0;
     } else {
+      // Convert a "VOL" + db reading into a percentage
       var vnum = parseInt(vol.substring(3));
       var volume = this.dbToCent(vnum);
+    }
+
+
+    // Weird Homekit behavior on zero (says we're at 100%)
+    // add in a small number to help
+    const epsilon = 1e-9
+    if (volume === 0) {
+      volume += epsilon;
     }
 
 
@@ -298,7 +307,7 @@ class NuvoPlatform implements DynamicPlatformPlugin {
       this.zone_volumes[zoneNum] = 0;
     }
 
-    this.log.debug(`Zone Volume Check: zone ${zoneNum} source on ${sourceOn} vol string ${vol} volume ${volume} zone_volumes[] ${this.zone_volumes[zoneNum]}`);
+    this.log.debug(`Zone Volume Status: zone ${zoneNum} source on ${sourceOn} vol string ${vol} volume ${volume} zone_volumes[] ${this.zone_volumes[zoneNum]}`);
 
     if (lastSource !== sourceOn) {
       if (lastSource !== 0 && this.zone_source_combos[zoneNum][lastSource]) {
