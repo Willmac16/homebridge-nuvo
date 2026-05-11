@@ -41,6 +41,7 @@ class NuvoPlatform implements DynamicPlatformPlugin {
   readonly numZones: number;
   readonly powOnVol: number;
   readonly portRetryInterval: number;
+  readonly statusCheckInterval: number;
   private serialConnection: NuvoSerial;
 
   readonly zone_configs: string[][];
@@ -82,6 +83,8 @@ class NuvoPlatform implements DynamicPlatformPlugin {
       this.portRetryInterval = 0;
     }
 
+    this.statusCheckInterval = config.statusCheckInterval ?? 300;
+
     serial = require("./serial");
 
     const zoneArrayLength: number = this.numZones + 1;
@@ -102,7 +105,7 @@ class NuvoPlatform implements DynamicPlatformPlugin {
     this.zone_volumes = new Array(zoneArrayLength);
 
     api.on(APIEvent.DID_FINISH_LAUNCHING, () => {
-      this.serialConnection = new serial.NuvoSerial(this.log, this.port, this.numZones, this.portRetryInterval, this);
+      this.serialConnection = new serial.NuvoSerial(this.log, this.port, this.numZones, this.portRetryInterval, this.statusCheckInterval, this);
     });
   }
 
@@ -119,19 +122,20 @@ class NuvoPlatform implements DynamicPlatformPlugin {
 
     onChar.on(CharacteristicEventTypes.SET, (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
       if (value === true) {
-        this.serialConnection.zoneOn(accessory.context.zone);
-        this.serialConnection.zoneSource(accessory.context.zone, accessory.context.source);
 
-        let alreadyOn = this.zone_sources[accessory.context.zone] === accessory.context.source;
-        let alreadyVol = this.zone_volumes[accessory.context.zone] !== 0;
+        let alreadyOn = this.zone_sources[accessory.context.zone] !== 0;
 
         this.log.debug(`Turning On Zone ${accessory.context.zone}: alreadyOn? ${alreadyOn}; existingVol ${this.zone_volumes[accessory.context.zone]}`);
 
-        if (!alreadyOn && !alreadyVol) {
+        this.serialConnection.zoneOn(accessory.context.zone);
+        this.serialConnection.zoneSource(accessory.context.zone, accessory.context.source);
+
+        if (!alreadyOn) {
           this.serialConnection.zoneVolume(accessory.context.zone, this.powOnVol);
         }
 
       } else {
+        this.log.debug(`Turning Off Zone ${accessory.context.zone}`);
         this.serialConnection.zoneOff(accessory.context.zone);
       }
 
@@ -157,16 +161,21 @@ class NuvoPlatform implements DynamicPlatformPlugin {
     });
 
     brightChar.on(CharacteristicEventTypes.SET, (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
-      this.serialConnection.zoneOn(accessory.context.zone);
-
+      let alreadyOn = this.zone_sources[accessory.context.zone] !== 0;
       let vol = this.centToDb(Number(value));
 
-      let alreadyOn = this.zone_sources[accessory.context.zone] === accessory.context.source;
-
-      // Logic to handle the power on to 100% behavior from home app
+    // Logic to handle the power on to 100% behavior from home app
       // Should allow 100% only after initial power on
       if (value === 100 && !alreadyOn) {
         vol = this.powOnVol;
+      }
+
+      let callback_val = this.dbToCent(vol);
+
+      this.log.debug(`Setting Vol: Zone ${accessory.context.zone}; homekit-request ${value}; actual-percent ${callback_val}; alreadyOn: ${alreadyOn}`);
+
+      if (!alreadyOn) {
+        this.serialConnection.zoneOn(accessory.context.zone);
       }
 
       // Preemptively mark that zone volume was requested (so onChar -> on state doesn't override)
@@ -174,9 +183,6 @@ class NuvoPlatform implements DynamicPlatformPlugin {
 
       this.serialConnection.zoneVolume(accessory.context.zone, vol);
 
-      let callback_val = this.dbToCent(vol);
-
-      this.log.debug(`Setting Vol: Zone ${accessory.context.zone}; homekit-val ${value}; callback-val ${callback_val}; alreadyOn: ${alreadyOn}`);
       callback();
       brightChar.updateValue(callback_val);
     });
