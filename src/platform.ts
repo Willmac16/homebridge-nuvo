@@ -298,16 +298,16 @@ class NuvoPlatform implements DynamicPlatformPlugin {
       this.zone_volumes[zoneNum] = 0;
     }
 
-    this.log.debug(`Zone Volume Check: source on ${sourceOn} vol ${vol} volume ${volume} zone_volumes[] ${this.zone_volumes[zoneNum]}`);
+    this.log.debug(`Zone Volume Check: zone ${zoneNum} source on ${sourceOn} vol string ${vol} volume ${volume} zone_volumes[] ${this.zone_volumes[zoneNum]}`);
 
     if (lastSource !== sourceOn) {
       if (lastSource !== 0 && this.zone_source_combos[zoneNum][lastSource]) {
-        this.log.debug(`Messing with ${zoneNum} ${lastSource}`);
+        this.log.debug(`Source change: turning off zone ${zoneNum} source ${lastSource}`);
         this.zone_source_combos[zoneNum][lastSource].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.On, false);
         this.zone_source_combos[zoneNum][lastSource].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.Brightness, 0);
       }
       if (sourceOn !== 0 && this.zone_source_combos[zoneNum][sourceOn]) {
-        this.log.debug(`Mess ${zoneNum} ${sourceOn}`);
+        this.log.debug(`Source change: turning on zone ${zoneNum} source ${sourceOn} at ${volume}%`);
         this.zone_source_combos[zoneNum][sourceOn].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.On, true);
         this.zone_source_combos[zoneNum][sourceOn].getService(hap.Service.Lightbulb).updateCharacteristic(hap.Characteristic.Brightness, volume);
       }
